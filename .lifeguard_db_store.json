@@ -1,0 +1,179 @@
+{
+  "users": [
+    {
+      "user_id": "usr_default_sai_kumar",
+      "full_name": "Sai Kumar",
+      "country_code": "+91",
+      "mobile_number": "+919876543210",
+      "password_hash": "bcb888ad4997fd9228332465386c911843fc28c7ac1445e82ff6a27504363b44",
+      "created_at": "2026-09-27T10:00:00.000Z"
+    },
+    {
+      "user_id": "usr_munf6w3v_2ch6",
+      "full_name": "Ananya Sharma Varma",
+      "country_code": "+91",
+      "mobile_number": "+919876511111",
+      "password_hash": "d79751d27a51d7b0aea28a17f38f26559ae84f888a9dc1a3788949eb4fcc433c",
+      "created_at": "2026-09-30T01:21:58.027Z"
+    },
+    {
+      "user_id": "usr_munf6w4x_gw8a",
+      "full_name": "User Beta",
+      "country_code": "+91",
+      "mobile_number": "+919876522222",
+      "password_hash": "4a58bdc045ee3dd5ac16583e2a4c2934f32673f5e5e8ffa54bb2edc63696b5a6",
+      "created_at": "2026-09-30T01:21:58.065Z"
+    }
+  ],
+  "sessions": [
+    {
+      "session_id": "sess_munf6w3w_soh6zc",
+      "user_id": "usr_munf6w3v_2ch6",
+      "token": "tok_rs82vp6irskmunf6w3w",
+      "login_time": "2026-09-30T01:21:58.028Z",
+      "is_active": 0
+    },
+    {
+      "session_id": "sess_munf6w41_vru3rj",
+      "user_id": "usr_munf6w3v_2ch6",
+      "token": "tok_ma5wholk0ahmunf6w41",
+      "login_time": "2026-09-30T01:21:58.033Z",
+      "is_active": 0
+    },
+    {
+      "session_id": "sess_munf6w4y_shzkvs",
+      "user_id": "usr_munf6w4x_gw8a",
+      "token": "tok_7w7wykxo9sdmunf6w4y",
+      "login_time": "2026-09-30T01:21:58.066Z",
+      "is_active": 0
+    },
+    {
+      "session_id": "sess_munf6w50_qvzdse",
+      "user_id": "usr_munf6w3v_2ch6",
+      "token": "tok_xt64gr8roeqmunf6w50",
+      "login_time": "2026-09-30T01:21:58.068Z",
+      "is_active": 1
+    }
+  ],
+  "emergency_contacts": [
+    {
+      "contact_id": "cnt_munf6w43_i2je",
+      "user_id": "usr_munf6w3v_2ch6",
+      "name": "Emergency Contact 1 (Updated)",
+      "mobile_number": "+919876511112",
+      "country_code": "+91",
+      "relationship": "Father",
+      "created_at": "2026-09-30T01:21:58.035Z"
+    },
+    {
+      "contact_id": "cnt_munf6w44_w3m7",
+      "user_id": "usr_munf6w3v_2ch6",
+      "name": "Emergency Contact 2",
+      "mobile_number": "+919876511113",
+      "country_code": "+91",
+      "relationship": "Sibling",
+      "created_at": "2026-09-30T01:21:58.036Z"
+    }
+  ],
+  "emergency_incidents": [
+    {
+      "id": "evt_1790731318054_f0yov",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "CONFIRMED_SCREAM",
+      "detection_result": "SCREAM_VERIFIED",
+      "confidence": 0.96,
+      "latitude": 17.385,
+      "longitude": 78.4867,
+      "accuracy": 6.5,
+      "alert_status": "ALERT_SENT",
+      "source": "AI_MICROPHONE_STREAM",
+      "timestamp": "2026-09-30T01:21:58.054Z",
+      "created_at": "2026-09-30T01:21:58.054Z"
+    },
+    {
+      "id": "sos_1790731318061_elfym",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "MANUAL_SOS",
+      "detection_result": "MANUAL_USER_TRIGGER",
+      "confidence": null,
+      "latitude": 17.385,
+      "longitude": 78.4867,
+      "accuracy": 6.5,
+      "alert_status": "ALERT_SENT",
+      "source": "SYSTEM",
+      "timestamp": "2026-09-30T01:21:58.061Z",
+      "created_at": "2026-09-30T01:21:58.061Z"
+    },
+    {
+      "id": "inc_1790731318069_03qzj",
+      "user_id": "usr_munf6w4x_gw8a",
+      "incident_type": "MANUAL_SOS",
+      "detection_result": "MANUAL_USER_TRIGGER",
+      "confidence": null,
+      "latitude": null,
+      "longitude": null,
+      "accuracy": null,
+      "alert_status": "NO_CONTACTS",
+      "source": "MANUAL_BUTTON",
+      "timestamp": "2026-09-30T01:21:58.069Z",
+      "created_at": "2026-09-30T01:21:58.069Z"
+    },
+    {
+      "id": "inc_1790731318087_sw4bt",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "AI_DETECTED",
+      "detection_result": "SCREAM_VERIFIED",
+      "confidence": null,
+      "latitude": 17.385,
+      "longitude": 78.4867,
+      "accuracy": 6.5,
+      "alert_status": "ALERT_SENT",
+      "source": "AI_MICROPHONE_STREAM",
+      "timestamp": "2026-09-30T01:21:58.087Z",
+      "created_at": "2026-09-30T01:21:58.087Z"
+    },
+    {
+      "id": "inc_1790731318089_8pp78",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "MANUAL_SOS",
+      "detection_result": "MANUAL_USER_TRIGGER",
+      "confidence": null,
+      "latitude": 17.385,
+      "longitude": 78.4867,
+      "accuracy": 6.5,
+      "alert_status": "ALERT_FAILED",
+      "source": "MANUAL_BUTTON",
+      "timestamp": "2026-09-30T01:21:58.089Z",
+      "created_at": "2026-09-30T01:21:58.089Z"
+    },
+    {
+      "id": "evt_1790731318094_v4en2",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "AI_DETECTED",
+      "detection_result": "SCREAM_VERIFIED",
+      "confidence": 0.98,
+      "latitude": 17.385,
+      "longitude": 78.4867,
+      "accuracy": 6.5,
+      "alert_status": "ALERT_SENT",
+      "source": "AI_MICROPHONE_STREAM",
+      "timestamp": "2026-09-30T01:21:58.094Z",
+      "created_at": "2026-09-30T01:21:58.094Z"
+    },
+    {
+      "id": "sos_1790731318705_5xtsa",
+      "user_id": "usr_munf6w3v_2ch6",
+      "incident_type": "MANUAL_SOS",
+      "detection_result": "MANUAL_USER_TRIGGER",
+      "confidence": null,
+      "latitude": 16.5062,
+      "longitude": 80.648,
+      "accuracy": 5,
+      "alert_status": "ALERT_SENT",
+      "source": "SYSTEM",
+      "timestamp": "2026-09-30T01:21:58.705Z",
+      "created_at": "2026-09-30T01:21:58.705Z"
+    }
+  ],
+  "sound_events": []
+}

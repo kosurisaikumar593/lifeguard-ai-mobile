@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "LifeGuard AI",
+    "slug": "lifeguard-ai",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D52D6"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.lifeguard.ai",
+      "buildNumber": "2",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "LifeGuard AI requires microphone access to monitor surrounding sound levels and detect distress screams in emergencies.",
+        "NSLocationWhenInUseUsageDescription": "LifeGuard AI requires your location to attach real-time GPS coordinates to emergency alerts sent to your contacts."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.lifeguard.ai",
+      "versionCode": 2,
+      "permissions": [
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/icon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow LifeGuard AI to access your microphone for distress sound monitoring."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow LifeGuard AI to access your location during emergencies."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0D52D6"
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
