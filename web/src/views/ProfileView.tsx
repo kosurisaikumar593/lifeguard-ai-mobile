@@ -4,6 +4,8 @@ import { webNotificationService } from '../services/WebNotificationService';
 import { geolocationService } from '../services/GeolocationService';
 import { themeService } from '../services/ThemeService';
 import { cloudInferenceService } from '../services/CloudInferenceService';
+import { cloudStorageService, BackendProvider } from '../services/CloudStorageService';
+import { supabaseService } from '../services/SupabaseService';
 
 interface ProfileViewProps {
   currentUser: UserProfile | null;
@@ -29,6 +31,15 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [cloudApiKey, setCloudApiKey] = useState<string>(cloudInferenceService.getApiKey());
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [apiSaveStatus, setApiSaveStatus] = useState<string | null>(null);
+
+  const [activeBackend, setActiveBackend] = useState<BackendProvider>(cloudStorageService.getActiveBackend());
+  const [supabaseUrl, setSupabaseUrl] = useState<string>(
+    localStorage.getItem('lifeguard_supabase_url') || import.meta.env.VITE_SUPABASE_URL || ''
+  );
+  const [supabaseKey, setSupabaseKey] = useState<string>(
+    localStorage.getItem('lifeguard_supabase_key') || import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+  );
+  const [backendSaveStatus, setBackendSaveStatus] = useState<string | null>(null);
 
   const checkPermissions = async () => {
     // 1. Notification
@@ -371,6 +382,130 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 ✓ {apiSaveStatus}
               </span>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Backend & Database Integration (Supabase, Firebase, Node.js Express) */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">🗄️ Backend &amp; Database Architecture</h3>
+            <p className="card-subtitle">Connected BaaS / REST engine with autonomous local fallback</p>
+          </div>
+          <span className={`badge ${activeBackend === 'SUPABASE' ? 'badge-primary' : activeBackend === 'FIREBASE' ? 'badge-warning' : activeBackend === 'NODE_EXPRESS' ? 'badge-info' : 'badge-success'}`}>
+            Active: {activeBackend}
+          </span>
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+          {cloudStorageService.getBackendStatus().details}. Automatic fallbacks ensure 100% operational UI when backend credentials are not set.
+        </p>
+
+        {/* Backend Switcher Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginBottom: 16 }}>
+          <button
+            className={`btn ${activeBackend === 'SUPABASE' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '10px 12px', fontSize: 12, textAlign: 'left' }}
+            onClick={() => {
+              cloudStorageService.setBackendOverride('SUPABASE');
+              setActiveBackend('SUPABASE');
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>⚡ Supabase</div>
+            <div style={{ fontSize: 10, opacity: 0.85 }}>PostgreSQL &amp; Realtime Channel</div>
+          </button>
+
+          <button
+            className={`btn ${activeBackend === 'FIREBASE' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '10px 12px', fontSize: 12, textAlign: 'left' }}
+            onClick={() => {
+              cloudStorageService.setBackendOverride('FIREBASE');
+              setActiveBackend('FIREBASE');
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>🔥 Firebase</div>
+            <div style={{ fontSize: 10, opacity: 0.85 }}>Firestore Collections &amp; Auth</div>
+          </button>
+
+          <button
+            className={`btn ${activeBackend === 'NODE_EXPRESS' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '10px 12px', fontSize: 12, textAlign: 'left' }}
+            onClick={() => {
+              cloudStorageService.setBackendOverride('NODE_EXPRESS');
+              setActiveBackend('NODE_EXPRESS');
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>🟢 Node.js / Express</div>
+            <div style={{ fontSize: 10, opacity: 0.85 }}>PostgreSQL REST &amp; Socket.io</div>
+          </button>
+
+          <button
+            className={`btn ${activeBackend === 'LOCAL_FALLBACK' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '10px 12px', fontSize: 12, textAlign: 'left' }}
+            onClick={() => {
+              cloudStorageService.setBackendOverride('LOCAL_FALLBACK');
+              setActiveBackend('LOCAL_FALLBACK');
+            }}
+          >
+            <div style={{ fontWeight: 800 }}>💾 Local Fallback</div>
+            <div style={{ fontSize: 10, opacity: 0.85 }}>Autonomous Browser Engine</div>
+          </button>
+        </div>
+
+        {/* Supabase Dynamic Configuration */}
+        <div style={{ background: 'var(--bg-app)', padding: 14, borderRadius: 10 }}>
+          <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main)', marginBottom: 8 }}>
+            ⚡ Supabase Connection Keys
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4, color: 'var(--text-muted)' }}>
+                VITE_SUPABASE_URL
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                value={supabaseUrl}
+                onChange={(e) => setSupabaseUrl(e.target.value)}
+                placeholder="https://your-project.supabase.co"
+                style={{ fontSize: 12 }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, marginBottom: 4, color: 'var(--text-muted)' }}>
+                VITE_SUPABASE_ANON_KEY
+              </label>
+              <input
+                type="password"
+                className="input-field"
+                value={supabaseKey}
+                onChange={(e) => setSupabaseKey(e.target.value)}
+                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                style={{ fontSize: 12 }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                className="btn btn-primary"
+                style={{ padding: '6px 16px', fontSize: 12 }}
+                onClick={() => {
+                  if (supabaseUrl) localStorage.setItem('lifeguard_supabase_url', supabaseUrl.trim());
+                  else localStorage.removeItem('lifeguard_supabase_url');
+                  if (supabaseKey) localStorage.setItem('lifeguard_supabase_key', supabaseKey.trim());
+                  else localStorage.removeItem('lifeguard_supabase_key');
+                  setBackendSaveStatus('Supabase keys updated! Reload or click Test.');
+                  setTimeout(() => setBackendSaveStatus(null), 3500);
+                }}
+              >
+                Save Supabase Credentials
+              </button>
+              {backendSaveStatus && (
+                <span style={{ fontSize: 12, color: 'var(--success)', fontWeight: 700 }}>
+                  ✓ {backendSaveStatus}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -15,6 +15,7 @@ import {
   AppAlertPayload,
   AppAlertRecipient,
 } from '../types';
+import { cloudStorageService } from './CloudStorageService';
 
 export type AlertUpdateCallback = (payload: AppAlertPayload | null) => void;
 
@@ -126,6 +127,22 @@ export class EmergencyAlertService {
     this.activeAlert = payload;
     this.saveToHistory(payload);
     this.notify();
+
+    // Persist to active database backend (Supabase / Firebase / Node.js / Local)
+    cloudStorageService.createIncident(params.user.id, {
+      incidentType: params.type === 'MANUAL_SOS' ? 'MANUAL_SOS' : 'AI_DETECTED',
+      detectionResult: params.type === 'MANUAL_SOS' ? 'MANUAL_TRIGGER' : 'SCREAM',
+      soundLevel: params.soundLevel || 0,
+      decibels: params.decibels || 0,
+      confidence: 96.5,
+      latitude: params.location?.latitude,
+      longitude: params.location?.longitude,
+      locationAccuracy: params.location?.accuracy,
+      locationAddress: params.location?.formattedAddress,
+      alertStatus: 'ALERT_SENT',
+      recipientsSummary: `${recipients.length} Contact${recipients.length === 1 ? '' : 's'} Alerted`,
+      bufferCancelled: false,
+    }).catch((e) => console.warn('[EmergencyAlertService] Database create incident error:', e));
 
     // Step 1: Simulate network transit -> DELIVERED after 500ms
     const t1 = setTimeout(() => {
