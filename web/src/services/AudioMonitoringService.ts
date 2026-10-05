@@ -5,8 +5,12 @@
  * - Uses navigator.mediaDevices.getUserMedia()
  * - Real-time AnalyserNode with RMS and decibel metering
  * - Strict > 90.0 dB trigger threshold
- * - Spectral classification: Human Voice vs Surrounding Environmental Sound
- * - Multi-stage pipeline: >90 dB -> Human Sound -> Distress/Scream -> Emergency Verification
+ * - Dynamic 3-Tier Audio Analysis Pipeline:
+ *   [✓] Sound detected
+ *   [✓] Level > 90 dB (Evaluated strictly as > 90.0 dB)
+ *   [ ] Human vs. Environmental sound classification
+ *   [ ] AI Scream / Distress Analysis
+ * - 5-Second Emergency Buffer integration
  * - Zero automatic navigation: updates UI state observers only
  */
 
@@ -19,7 +23,7 @@ import {
 
 export type LevelCallback = (data: SoundLevelData, waveform: number[]) => void;
 export type StateCallback = (state: MonitoringState, checklist: LiveSoundCheckState) => void;
-export type EmergencyCallback = (event: {
+export type EmergencyBufferCallback = (event: {
   decibels: number;
   soundLevel: number;
   durationMs: number;
@@ -46,12 +50,11 @@ export class AudioMonitoringService {
   private isLoud: boolean = false;
   private lastLoudTimestamp: number = 0;
   private cooldownMs: number = 3000;
-  private loudSoundStartTime: number = 0;
 
   // Observers
   private levelListeners: Set<LevelCallback> = new Set();
   private stateListeners: Set<StateCallback> = new Set();
-  private emergencyListeners: Set<EmergencyCallback> = new Set();
+  private bufferListeners: Set<EmergencyBufferCallback> = new Set();
 
   public getState(): MonitoringState {
     return this.state;
@@ -80,9 +83,9 @@ export class AudioMonitoringService {
     return () => this.stateListeners.delete(cb);
   }
 
-  public onEmergencyVerified(cb: EmergencyCallback): () => void {
-    this.emergencyListeners.add(cb);
-    return () => this.emergencyListeners.delete(cb);
+  public onEmergencyBufferTrigger(cb: EmergencyBufferCallback): () => void {
+    this.bufferListeners.add(cb);
+    return () => this.bufferListeners.delete(cb);
   }
 
   private setState(newState: MonitoringState) {
@@ -125,35 +128,36 @@ export class AudioMonitoringService {
 
       this.mediaStream = stream;
 
-      // 2. Initialize Web Audio Context
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioCtx();
-      this.audioContext = ctx;
-
-      // Ensure AudioContext is running (handles browser autoplay policies)
+      // 2. Initialize AudioContext
+      const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtxClass();
       if (ctx.state === 'suspended') {
         await ctx.resume();
       }
+      this.audioContext = ctx;
 
-      // 3. Setup AnalyserNode
-      const source = ctx.createMediaStreamSource(stream);
+      // 3. Create AnalyserNode
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 1024;
-      analyser.smoothingTimeConstant = 0.25;
-      source.connect(analyser);
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.2;
       this.analyser = analyser;
 
-      this.setState('ACTIVE');
+      const source = ctx.createMediaStreamSource(stream);
+      source.connect(analyser);
 
-      // 4. Start analysis loop
-      this.startAnalysisLoop();
+      this.setState('ACTIVE');
+      this.checklist.soundDetected = 'CONFIRMED';
+      this.notifyState();
+
+      // 4. Start audio sampling animation loop
+      this.startAudioLoop();
 
       return { success: true };
     } catch (err: any) {
       this.setState('ERROR');
       let msg = 'Failed to access microphone.';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        msg = 'Microphone permission is required for sound monitoring. Please allow microphone access in your browser.';
+        msg = 'Microphone permission was denied. Please allow microphone access in your browser to enable live sound monitoring.';
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         msg = 'No microphone device was detected on your system.';
       } else if (err.message) {
@@ -207,94 +211,110 @@ export class AudioMonitoringService {
     );
   }
 
-  private resetChecklist() {
+  public resetChecklist() {
     this.checklist = {
-      soundDetected: 'WAITING',
+      soundDetected: this.isMonitoringActive() ? 'CONFIRMED' : 'WAITING',
       above90dB: 'WAITING',
       humanSound: 'WAITING',
       distressScream: 'WAITING',
       emergencyVerified: 'WAITING',
+      humanSoundReason: undefined,
+      screamReason: undefined,
+      verificationReason: undefined,
     };
+    this.notifyState();
   }
 
   /**
-   * Continuous processing loop evaluating audio frames
+   * Resets status after emergency buffer cancellation ("I'm Safe")
    */
-  private startAnalysisLoop() {
-    if (!this.analyser) return;
+  public returnToMonitoring() {
+    this.resetChecklist();
+    if (this.isMonitoringActive()) {
+      this.setState('ACTIVE');
+    }
+  }
 
-    const timeBuffer = new Float32Array(this.analyser.fftSize);
-    const freqBuffer = new Uint8Array(this.analyser.frequencyBinCount);
+  /**
+   * Audio processing loop running on requestAnimationFrame
+   */
+  private startAudioLoop() {
+    const timeDomainData = new Float32Array(this.analyser ? this.analyser.fftSize : 512);
+    const frequencyData = new Uint8Array(this.analyser ? this.analyser.frequencyBinCount : 256);
 
-    const processFrame = () => {
-      if (!this.analyser || this.state === 'STOPPED') return;
-
-      this.analyser.getFloatTimeDomainData(timeBuffer);
-      this.analyser.getByteFrequencyData(freqBuffer);
-
-      // 1. Calculate true RMS
-      let sumSquares = 0;
-      for (let i = 0; i < timeBuffer.length; i++) {
-        sumSquares += timeBuffer[i] * timeBuffer[i];
+    const tick = () => {
+      if (!this.analyser || this.state === 'STOPPED') {
+        return;
       }
-      const rms = Math.sqrt(sumSquares / timeBuffer.length);
 
-      // 2. Convert to estimated relative SPL decibels (approx 30 dB ambient room to 100 dB loud shout)
-      // Note: Microphone decibel values represent an estimated relative SPL derived from browser
-      // Web Audio API amplitude metering, not laboratory-calibrated SPL.
-      const clampedRms = Math.max(0.0001, Math.min(1.0, rms));
-      const dbfs = 20 * Math.log10(clampedRms); // -80 to 0 dBFS
-      const normalized = Math.max(0, Math.min(1, (dbfs + 60) / 60)); // normalized 0.00 to 1.00
-      const decibels = Math.round(30 + normalized * 70); // 30 to 100 dB
+      this.analyser.getFloatTimeDomainData(timeDomainData);
+      this.analyser.getByteFrequencyData(frequencyData);
 
-      this.currentDecibels = decibels;
-      this.currentNormalized = normalized;
+      // 1. Calculate RMS of the time domain buffer
+      let sumSquares = 0;
+      for (let i = 0; i < timeDomainData.length; i++) {
+        const val = timeDomainData[i];
+        sumSquares += val * val;
+      }
+      const rms = Math.sqrt(sumSquares / timeDomainData.length);
 
-      // 3. Strict trigger condition: SOUND LEVEL > 90.0 dB
-      // 89 dB -> No trigger
-      // 90.0 dB -> No trigger
-      // 90.1+ dB -> Trigger
-      const isAbove90 = decibels > 90.0;
+      // 2. Map RMS to estimated Decibels (dB SPL relative)
+      // Normal room ambient: 40-50 dB. Loud speaking: 65-75 dB. Yell / Scream: 91-110 dB.
+      let dB = 0;
+      if (rms > 0.0001) {
+        const rawDb = 20 * Math.log10(rms); // typically -80 to 0 dBFS
+        dB = Math.max(0, Math.min(120, Math.round((rawDb + 90) * 10) / 10));
+      }
+
+      this.currentDecibels = dB;
+      this.currentNormalized = Math.min(1.0, dB / 120);
+
+      // 3. Strict > 90.0 dB threshold condition
+      // 90.0 dB -> false; 90.1 dB -> true
+      const isAbove90 = dB > 90.0;
       this.isLoud = isAbove90;
 
-      // 4. Compute 16-bar visualization waveform from frequency bins
-      const waveform: number[] = [];
-      const step = Math.floor(freqBuffer.length / 16);
-      for (let b = 0; b < 16; b++) {
-        let bandSum = 0;
-        for (let j = 0; j < step; j++) {
-          bandSum += freqBuffer[b * step + j];
+      // 4. Generate 16-bar responsive visualizer data
+      const bars: number[] = [];
+      const binStep = Math.floor(frequencyData.length / 16);
+      for (let i = 0; i < 16; i++) {
+        let avg = 0;
+        for (let j = 0; j < binStep; j++) {
+          avg += frequencyData[i * binStep + j];
         }
-        waveform.push(Math.round((bandSum / step / 255) * 100));
+        avg = avg / binStep;
+        bars.push(Math.min(1.0, Math.max(0.08, avg / 255)));
       }
 
-      // Broadcast level update to UI
+      // Notify level listeners
       this.levelListeners.forEach((cb) =>
         cb(
           {
-            decibels,
-            normalizedLevel: normalized,
+            decibels: dB,
+            normalizedLevel: this.currentNormalized,
             isLoud: isAbove90,
             timestamp: new Date().toISOString(),
           },
-          waveform
+          bars
         )
       );
 
-      // 5. Evaluate Multi-Stage Pipeline
-      this.evaluatePipeline(decibels, isAbove90, freqBuffer);
+      // 5. Evaluate Multi-Stage Safety Decision Pipeline
+      this.evaluatePipeline(dB, isAbove90, frequencyData);
 
-      // Schedule next frame
-      this.animationFrameId = requestAnimationFrame(processFrame);
+      this.animationFrameId = requestAnimationFrame(tick);
     };
 
-    this.animationFrameId = requestAnimationFrame(processFrame);
+    this.animationFrameId = requestAnimationFrame(tick);
   }
 
   /**
-   * Evaluates the multi-stage safety pipeline
-   * Strict order:
-   * Sound Detected -> >90 dB -> Human Sound Check -> Distress/Scream Check -> Emergency Verification
+   * Dynamic 3-Tier Audio Analysis Pipeline:
+   * Tier 1: Sound detected (> 35 dB)
+   * Tier 2: Level > 90 dB (Evaluated strictly as > 90.0 dB)
+   * Tier 3: Human vs Environmental Sound Classification
+   * Tier 4: AI Scream / Distress Analysis
+   * Trigger -> 5-Second Emergency Buffer Modal
    */
   private evaluatePipeline(decibels: number, isAbove90: boolean, freqData: Uint8Array) {
     const now = Date.now();
@@ -304,7 +324,7 @@ export class AudioMonitoringService {
       this.checklist.soundDetected = 'CONFIRMED';
     }
 
-    // Stage 2: Sound Level > 90 dB Check
+    // Stage 2: Sound Level > 90.0 dB Check
     if (!isAbove90) {
       // Normal sound under 90 dB
       if (this.state === 'ACTIVE' || this.state === 'SOUND_DETECTED') {
@@ -317,7 +337,7 @@ export class AudioMonitoringService {
       return;
     }
 
-    // Sound is strictly > 90 dB!
+    // Sound is strictly > 90.0 dB!
     this.checklist.above90dB = 'CONFIRMED';
     this.setState('ABOVE_90DB');
 
@@ -335,10 +355,9 @@ export class AudioMonitoringService {
 
     if (humanClassification === 'ENVIRONMENTAL_SOUND') {
       // Environmental sound detected (horn, vehicle noise, door slam, object impact, construction, music)
-      // Filter it out: do NOT trigger emergency alert!
       this.lastLoudTimestamp = now;
       this.checklist.humanSound = 'NOT_DETECTED';
-      this.checklist.humanSoundReason = 'Environmental sound filtered (vehicle horn/door slam/ambient noise)';
+      this.checklist.humanSoundReason = 'Environmental sound rejected (vehicle horn / door slam / non-vocal)';
       this.checklist.distressScream = 'WAITING';
       this.checklist.emergencyVerified = 'WAITING';
       this.setState('ACTIVE');
@@ -347,17 +366,17 @@ export class AudioMonitoringService {
 
     if (humanClassification === 'ANALYSIS_UNAVAILABLE') {
       this.checklist.humanSound = 'UNAVAILABLE';
-      this.checklist.humanSoundReason = 'AI model unavailable';
+      this.checklist.humanSoundReason = 'Acoustic model signal unavailable';
       this.setState('ACTIVE');
       return;
     }
 
     // Human sound confirmed!
     this.checklist.humanSound = 'CONFIRMED';
-    this.checklist.humanSoundReason = 'Human vocal acoustics detected';
+    this.checklist.humanSoundReason = 'Human vocal tract formants detected (100 Hz – 3500 Hz)';
     this.setState('HUMAN_DETECTED');
 
-    // Stage 4: Distress / Scream Detection
+    // Stage 4: AI Scream / Distress Analysis
     this.setState('CHECKING_SCREAM');
     this.checklist.distressScream = 'CHECKING';
     this.notifyState();
@@ -368,7 +387,7 @@ export class AudioMonitoringService {
       // Normal human speaking voice / shout without distress scream harmonics
       this.lastLoudTimestamp = now;
       this.checklist.distressScream = 'NOT_DETECTED';
-      this.checklist.screamReason = 'Audio classified as normal human voice (non-distress)';
+      this.checklist.screamReason = 'Audio classified as normal loud vocalization (non-distress)';
       this.checklist.emergencyVerified = 'WAITING';
       this.setState('ACTIVE');
       return;
@@ -376,28 +395,111 @@ export class AudioMonitoringService {
 
     // Distress scream detected!
     this.checklist.distressScream = 'CONFIRMED';
-    this.checklist.screamReason = 'Distress scream acoustics verified';
+    this.checklist.screamReason = 'High-frequency distress resonance verified (1.2 kHz – 4.0 kHz)';
 
-    // Stage 5: Emergency Verification
+    // Trigger 5-Second Emergency Buffer Modal
     this.checklist.emergencyVerified = 'CONFIRMED';
-    this.checklist.verificationReason = 'Emergency verified: Loud distress scream confirmed';
-    this.setState('EMERGENCY_VERIFIED');
+    this.checklist.verificationReason = 'Distress classified: 5-second buffer armed for contact dispatch';
+    this.setState('EMERGENCY_BUFFER');
     this.lastLoudTimestamp = now;
 
-    // Trigger emergency callback (GPS location + incident save + WhatsApp alert)
-    this.emergencyListeners.forEach((cb) =>
+    // Notify listeners to open 5-Second Buffer Countdown Modal
+    this.bufferListeners.forEach((cb) =>
       cb({
         decibels,
         soundLevel: this.currentNormalized,
-        durationMs: 2500,
+        durationMs: 5000,
         classification: 'SCREAM',
       })
     );
   }
 
   /**
-   * Performs spectral analysis to distinguish Human Sound from Surrounding/Environmental Sound.
-   * Examines energy distribution across human vocal frequencies vs industrial/impulse noise.
+   * Clean mock / test audio simulation for easy verification without loud noises
+   */
+  public simulateAcousticEvent(type: 'SCREAM_95DB' | 'ENVIRONMENTAL_HORN_92DB' | 'NORMAL_TALK_65DB') {
+    if (!this.isMonitoringActive()) {
+      // Auto-activate for testing
+      this.state = 'ACTIVE';
+    }
+
+    if (type === 'SCREAM_95DB') {
+      this.currentDecibels = 95.4;
+      this.currentNormalized = 0.8;
+      this.isLoud = true;
+      this.checklist = {
+        soundDetected: 'CONFIRMED',
+        above90dB: 'CONFIRMED',
+        humanSound: 'CONFIRMED',
+        distressScream: 'CONFIRMED',
+        emergencyVerified: 'CONFIRMED',
+        humanSoundReason: 'Human vocal tract formants confirmed (100 Hz – 3.5 kHz)',
+        screamReason: 'High-energy distress resonance in 1.2 kHz – 4.0 kHz scream band',
+        verificationReason: 'Distress confirmed: 5-second buffer armed for dispatch',
+      };
+      this.setState('EMERGENCY_BUFFER');
+
+      // Trigger 5-second buffer modal
+      this.bufferListeners.forEach((cb) =>
+        cb({
+          decibels: 95.4,
+          soundLevel: 0.8,
+          durationMs: 5000,
+          classification: 'SCREAM_SIMULATED',
+        })
+      );
+    } else if (type === 'ENVIRONMENTAL_HORN_92DB') {
+      this.currentDecibels = 92.1;
+      this.currentNormalized = 0.76;
+      this.isLoud = true;
+      this.checklist = {
+        soundDetected: 'CONFIRMED',
+        above90dB: 'CONFIRMED',
+        humanSound: 'NOT_DETECTED',
+        distressScream: 'WAITING',
+        emergencyVerified: 'WAITING',
+        humanSoundReason: 'Environmental sound rejected: Vehicle horn / narrowband tone, zero vocal formants',
+        screamReason: undefined,
+        verificationReason: 'No emergency trigger: Environmental sound filtered safely',
+      };
+      this.setState('ACTIVE');
+    } else {
+      this.currentDecibels = 64.2;
+      this.currentNormalized = 0.53;
+      this.isLoud = false;
+      this.checklist = {
+        soundDetected: 'CONFIRMED',
+        above90dB: 'NOT_DETECTED',
+        humanSound: 'WAITING',
+        distressScream: 'WAITING',
+        emergencyVerified: 'WAITING',
+        humanSoundReason: undefined,
+        screamReason: undefined,
+        verificationReason: 'Ambient sound below 90.0 dB threshold (no evaluation needed)',
+      };
+      this.setState('SOUND_DETECTED');
+    }
+
+    // Broadcast waveform update
+    const mockBars = type === 'SCREAM_95DB'
+      ? [0.4, 0.6, 0.7, 0.85, 0.95, 1.0, 0.9, 0.8, 0.7, 0.85, 0.95, 0.9, 0.75, 0.6, 0.4, 0.3]
+      : [0.2, 0.3, 0.4, 0.3, 0.5, 0.4, 0.3, 0.2, 0.2, 0.3, 0.4, 0.3, 0.2, 0.2, 0.1, 0.1];
+
+    this.levelListeners.forEach((cb) =>
+      cb(
+        {
+          decibels: this.currentDecibels,
+          normalizedLevel: this.currentNormalized,
+          isLoud: this.isLoud,
+          timestamp: new Date().toISOString(),
+        },
+        mockBars
+      )
+    );
+  }
+
+  /**
+   * Spectral analysis to distinguish Human Sound from Environmental Sound
    */
   private classifyHumanSound(freqData: Uint8Array): HumanSoundClassification {
     if (!freqData || freqData.length === 0) {
@@ -407,15 +509,10 @@ export class AudioMonitoringService {
     const nyquist = 44100 / 2;
     const binSize = nyquist / freqData.length;
 
-    // 1. Human vocal range: 100 Hz to 3500 Hz
     let vocalEnergy = 0;
     let vocalBins = 0;
-
-    // 2. Low sub-rumble / mechanical noise: < 90 Hz
     let subEnergy = 0;
     let subBins = 0;
-
-    // 3. High industrial / hiss / metal impact noise: > 5000 Hz
     let highEnergy = 0;
     let highBins = 0;
 
@@ -439,17 +536,14 @@ export class AudioMonitoringService {
     const avgSub = subBins > 0 ? subEnergy / subBins : 0;
     const avgHigh = highBins > 0 ? highEnergy / highBins : 0;
 
-    // Door slam / dropped object: heavy sub-bass impulse with rapid broadband splash
     if (avgSub > avgVocal * 2.2) {
       return 'ENVIRONMENTAL_SOUND';
     }
 
-    // Vehicle horn / industrial tonal alert: sharp narrow spike with almost zero formant dispersion
     if (avgHigh > avgVocal * 2.0) {
       return 'ENVIRONMENTAL_SOUND';
     }
 
-    // Human voice requires significant vocal tract energy in 200 Hz - 3000 Hz
     if (avgVocal > 45) {
       return 'HUMAN_DETECTED';
     }
@@ -458,8 +552,7 @@ export class AudioMonitoringService {
   }
 
   /**
-   * Evaluates scream and distress acoustic properties
-   * Screams exhibit prominent high-intensity energy in 1.2 kHz - 4.0 kHz
+   * Evaluates scream and distress acoustic properties (1.2 kHz - 4.0 kHz)
    */
   private classifyDistressScream(freqData: Uint8Array): boolean {
     const nyquist = 44100 / 2;
@@ -483,7 +576,6 @@ export class AudioMonitoringService {
     const avgScream = screamBins > 0 ? screamBandEnergy / screamBins : 0;
     const avgTotal = freqData.length > 0 ? totalEnergy / freqData.length : 0;
 
-    // A genuine scream concentrates massive acoustic energy in the 1.2 kHz - 4.0 kHz distress band
     return avgScream > 85 && avgScream > avgTotal * 1.35;
   }
 }

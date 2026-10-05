@@ -29,7 +29,7 @@ export class CloudStorageService {
       if (savedUser) {
         this.currentUser = JSON.parse(savedUser);
       } else {
-        // Initialize default demo/verified user
+        // Initialize default verified demo user
         this.login('9876543210', 'Safety123');
       }
     } catch {
@@ -69,14 +69,24 @@ export class CloudStorageService {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
     } catch (e) {}
 
-    // Seed default emergency contact for new accounts if none exist
+    // Seed default emergency contacts for new accounts if none exist
     const contacts = await this.getContacts(user.id);
     if (contacts.length === 0) {
       await this.addContact(user.id, {
         name: 'Dad',
-        phoneNumber: '+919876543211',
+        phoneNumber: '+91 98765 43211',
         relationship: 'Father',
         priorityOrder: 1,
+        connectionState: 'Connected',
+        lastActive: 'Active 2m ago',
+      });
+      await this.addContact(user.id, {
+        name: 'Dr. Sarah',
+        phoneNumber: '+91 98765 43212',
+        relationship: 'Emergency Physician',
+        priorityOrder: 2,
+        connectionState: 'Connected',
+        lastActive: 'Active 12m ago',
       });
     }
 
@@ -119,7 +129,7 @@ export class CloudStorageService {
   }
 
   // ==========================================
-  // EMERGENCY CONTACTS (User Scoped)
+  // EMERGENCY CONTACTS (User Scoped & App-to-App)
   // ==========================================
 
   public async getContacts(userId: string): Promise<EmergencyContact[]> {
@@ -145,6 +155,8 @@ export class CloudStorageService {
       relationship: contactData.relationship || 'Emergency Contact',
       priorityOrder: contactData.priorityOrder || contacts.length + 1,
       createdAt: new Date().toISOString(),
+      connectionState: contactData.connectionState || 'Connected',
+      lastActive: contactData.lastActive || 'Active just now',
     };
 
     contacts.push(newContact);
@@ -152,6 +164,20 @@ export class CloudStorageService {
       localStorage.setItem(`${STORAGE_KEYS.CONTACTS_PREFIX}${userId}`, JSON.stringify(contacts));
     } catch (e) {}
     return newContact;
+  }
+
+  public async toggleContactConnection(userId: string, contactId: string): Promise<EmergencyContact | null> {
+    const contacts = await this.getContacts(userId);
+    const target = contacts.find((c) => c.id === contactId);
+    if (!target) return null;
+
+    target.connectionState = target.connectionState === 'Connected' ? 'Pending' : 'Connected';
+    target.lastActive = target.connectionState === 'Connected' ? 'Active just now' : 'Invited';
+
+    try {
+      localStorage.setItem(`${STORAGE_KEYS.CONTACTS_PREFIX}${userId}`, JSON.stringify(contacts));
+    } catch (e) {}
+    return target;
   }
 
   public async deleteContact(userId: string, contactId: string): Promise<void> {
@@ -196,6 +222,8 @@ export class CloudStorageService {
       locationAddress: data.locationAddress,
       alertStatus: data.alertStatus,
       createdAt: new Date().toISOString(),
+      recipientsSummary: data.recipientsSummary,
+      bufferCancelled: data.bufferCancelled,
     };
 
     incidents.unshift(newIncident); // prepend

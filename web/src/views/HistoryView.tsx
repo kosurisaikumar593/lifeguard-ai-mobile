@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, EmergencyIncident } from '../types';
+import { UserProfile, EmergencyIncident, GPSLocation } from '../types';
 import { cloudStorageService } from '../services/CloudStorageService';
+import { InteractiveMapModal } from '../components/InteractiveMapModal';
 
 interface HistoryViewProps {
   currentUser: UserProfile | null;
   onOpenAuth: () => void;
+  onTriggerTestIncident?: () => void;
 }
 
-export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAuth }) => {
+export const HistoryView: React.FC<HistoryViewProps> = ({
+  currentUser,
+  onOpenAuth,
+  onTriggerTestIncident,
+}) => {
   const [incidents, setIncidents] = useState<EmergencyIncident[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<GPSLocation | null>(null);
+  const [showMapModal, setShowMapModal] = useState(false);
 
   const loadIncidents = async () => {
     if (currentUser) {
@@ -30,6 +38,19 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
         localStorage.removeItem(`lifeguard_incidents_${currentUser.id}`);
         setIncidents([]);
       } catch (e) {}
+    }
+  };
+
+  const handleViewMap = (inc: EmergencyIncident) => {
+    if (inc.latitude && inc.longitude) {
+      setSelectedLocation({
+        latitude: inc.latitude,
+        longitude: inc.longitude,
+        accuracy: inc.locationAccuracy || 10,
+        timestamp: Date.now(),
+        googleMapsUrl: `https://maps.google.com/?q=${inc.latitude},${inc.longitude}`,
+      });
+      setShowMapModal(true);
     }
   };
 
@@ -61,14 +82,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
             Emergency Incident History ({incidents.length})
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-            Full timeline of AI sound-verified distress incidents and manual SOS triggers.
+            Full timeline of AI sound-verified distress incidents, manual SOS triggers, and live location shares.
           </p>
         </div>
         {incidents.length > 0 && (
           <button
-            className="btn btn-secondary"
+            className="btn btn-outline"
             onClick={handleClearHistory}
-            style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)', fontSize: 13 }}
+            style={{ color: 'var(--danger)', borderColor: 'var(--danger)', fontSize: 13 }}
           >
             Clear Log
           </button>
@@ -79,30 +100,48 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {incidents.map((inc) => {
             const isAI = inc.incidentType === 'AI_DETECTED';
+            const isLocation = inc.incidentType === 'LOCATION_SHARE';
+            const isCancelled = inc.alertStatus === 'CANCELLED_SAFE';
             const dateStr = new Date(inc.createdAt).toLocaleString('en-US', {
               dateStyle: 'medium',
               timeStyle: 'medium',
             });
 
             return (
-              <div key={inc.id} className="card" style={{ borderLeft: `4px solid ${isAI ? 'var(--purple)' : 'var(--danger)'}` }}>
+              <div
+                key={inc.id}
+                className="card"
+                style={{
+                  borderLeft: `5px solid ${isCancelled ? 'var(--warning)' : isAI ? 'var(--purple-ai)' : isLocation ? 'var(--primary)' : 'var(--danger)'}`,
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 24 }}>{isAI ? '🛡️' : '🚨'}</span>
+                    <span style={{ fontSize: 24 }}>
+                      {isCancelled ? '✓' : isAI ? '🛡️' : isLocation ? '📍' : '🚨'}
+                    </span>
                     <div>
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-main)' }}>
-                        {isAI ? 'AI Sound Detection Incident' : 'Manual Emergency SOS Trigger'}
+                        {isCancelled
+                          ? 'Emergency Trigger Cancelled ("I\'m Safe")'
+                          : isAI
+                          ? 'AI Sound Distress Incident'
+                          : isLocation
+                          ? 'Live Location Shared with Contacts'
+                          : 'Manual Emergency SOS Trigger'}
                       </h3>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{dateStr}</div>
                     </div>
                   </div>
 
-                  <span className={`status-badge ${inc.alertStatus === 'OPENED_IN_WHATSAPP' || inc.alertStatus === 'ALERT_SENT' ? 'status-safe' : 'status-danger'}`}>
-                    {inc.alertStatus}
+                  <span
+                    className={`badge ${isCancelled ? 'badge-warning' : 'badge-success'}`}
+                  >
+                    {isCancelled ? 'Cancelled (Safe)' : inc.alertStatus}
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginTop: 14, padding: 12, background: 'var(--bg-app)', borderRadius: 8, fontSize: 13 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 14, padding: 12, background: 'var(--bg-app)', borderRadius: 8, fontSize: 13 }}>
                   {isAI && (
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Acoustic Intensity</div>
@@ -114,7 +153,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
 
                   {inc.detectionResult && (
                     <div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Detection Classification</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Classification</div>
                       <div style={{ fontWeight: 700, marginTop: 2 }}>
                         {inc.detectionResult}
                       </div>
@@ -124,15 +163,16 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
                   {inc.latitude && inc.longitude ? (
                     <div>
                       <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>GPS Coordinates</div>
-                      <div style={{ marginTop: 2 }}>
-                        <a
-                          href={`https://maps.google.com/?q=${inc.latitude},${inc.longitude}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                      <div style={{ marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontFamily: 'monospace' }}>
+                          {inc.latitude.toFixed(5)}, {inc.longitude.toFixed(5)}
+                        </span>
+                        <button
+                          style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                          onClick={() => handleViewMap(inc)}
                         >
-                          {inc.latitude.toFixed(5)}, {inc.longitude.toFixed(5)} ↗
-                        </a>
+                          View Map ↗
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -149,19 +189,40 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ currentUser, onOpenAut
                     </div>
                   </div>
                 </div>
+
+                {inc.recipientsSummary && (
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+                    Payload: {inc.recipientsSummary}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>🛡️</div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No Incidents Recorded</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-            Your account is safe. Detections and emergency SOS triggers will be logged here with timestamps and GPS positions.
+        /* Empty Incident History State (Feature 7) */
+        <div className="card" style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-strong)' }}>
+          <div style={{ fontSize: 52, marginBottom: 14 }}>🛡️</div>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', marginBottom: 6 }}>
+            All Clear — No Incidents Recorded
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: 14, maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+            No distress events or emergency alarms have been recorded for your account. LifeGuard AI monitoring engine is ready on standby.
           </p>
+          {onTriggerTestIncident && (
+            <button className="btn btn-outline" onClick={onTriggerTestIncident}>
+              🧪 Log Safe Simulation Test Incident
+            </button>
+          )}
         </div>
       )}
+
+      {/* Interactive Map Modal */}
+      <InteractiveMapModal
+        isOpen={showMapModal}
+        location={selectedLocation}
+        onClose={() => setShowMapModal(false)}
+      />
     </div>
   );
 };

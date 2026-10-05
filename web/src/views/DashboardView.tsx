@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ActiveTab, UserProfile, EmergencyContact, EmergencyIncident, GPSLocation } from '../types';
+import { ActiveTab, UserProfile, EmergencyContact, EmergencyIncident, GPSLocation, AppAlertPayload } from '../types';
 import { audioMonitoringService } from '../services/AudioMonitoringService';
 import { geolocationService } from '../services/GeolocationService';
 import { cloudStorageService } from '../services/CloudStorageService';
+import { emergencyAlertService } from '../services/EmergencyAlertService';
+import { InteractiveMapModal } from '../components/InteractiveMapModal';
+import { ActiveAlertBanner } from '../components/ActiveAlertBanner';
 
 interface DashboardViewProps {
   currentUser: UserProfile | null;
@@ -10,6 +13,7 @@ interface DashboardViewProps {
   onOpenAuth: () => void;
   isMonitoring: boolean;
   onToggleMonitoring: () => void;
+  onRequestSOS: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -18,6 +22,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAuth,
   isMonitoring,
   onToggleMonitoring,
+  onRequestSOS,
 }) => {
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [recentIncidents, setRecentIncidents] = useState<EmergencyIncident[]>([]);
@@ -25,6 +30,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [locLoading, setLocLoading] = useState(false);
   const [locError, setLocError] = useState<string | null>(null);
   const [currentDecibels, setCurrentDecibels] = useState<number>(0);
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [activeAlert, setActiveAlert] = useState<AppAlertPayload | null>(null);
+  const [shareSuccess, setShareSuccess] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -37,11 +45,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }, [currentUser]);
 
   useEffect(() => {
-    // Listen for level updates when monitoring is active
-    const unsubscribe = audioMonitoringService.onLevelUpdate((data) => {
+    const unsubLevel = audioMonitoringService.onLevelUpdate((data) => {
       setCurrentDecibels(data.decibels);
     });
-    return () => unsubscribe();
+    const unsubAlert = emergencyAlertService.subscribe((alert) => {
+      setActiveAlert(alert);
+    });
+    return () => {
+      unsubLevel();
+      unsubAlert();
+    };
   }, []);
 
   const handleFetchLocation = async () => {
@@ -60,10 +73,53 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     handleFetchLocation();
   }, []);
 
+  const handleShareLocation = async () => {
+    if (!currentUser) {
+      onOpenAuth();
+      return;
+    }
+
+    let loc = location;
+    if (!loc) {
+      const res = await geolocationService.getCurrentPosition();
+      if (res.success && res.location) {
+        loc = res.location;
+        setLocation(loc);
+      }
+    }
+
+    // Dispatch direct app-to-app location share payload
+    emergencyAlertService.dispatchAlert({
+      user: currentUser,
+      contacts,
+      type: 'LOCATION_SHARE',
+      location: loc,
+      customNote: 'User shared their live GPS safety coordinates with connected contacts.',
+    });
+
+    // Record incident
+    await cloudStorageService.createIncident(currentUser.id, {
+      incidentType: 'LOCATION_SHARE',
+      detectionResult: 'LOCATION_SHARED',
+      confidence: 1.0,
+      latitude: loc?.latitude,
+      longitude: loc?.longitude,
+      locationAccuracy: loc?.accuracy,
+      alertStatus: 'APP_ALERT_DELIVERED',
+      recipientsSummary: `Shared with ${contacts.length} connected contacts`,
+    });
+
+    setShareSuccess(true);
+    setTimeout(() => setShareSuccess(false), 3000);
+  };
+
   const primaryContact = contacts[0] || null;
 
   return (
     <div className="view-container">
+      {/* Active App-to-App Alert Banner */}
+      <ActiveAlertBanner alert={activeAlert} onViewMap={() => setShowMapModal(true)} />
+
       {/* Welcome Banner */}
       <div className="card" style={{ background: 'linear-gradient(135deg, #0D52D6 0%, #1A73E8 100%)', color: '#fff', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
@@ -76,14 +132,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {currentUser ? `Welcome back, ${currentUser.fullName}` : 'Welcome to LifeGuard AI'}
             </h2>
             <p style={{ opacity: 0.9, fontSize: 14 }}>
-              Real-time acoustic safety, emergency response, and verified location sharing.
+              Real-time acoustic safety, emergency response, and verified app-to-app location sharing.
             </p>
           </div>
-          {!currentUser && (
-            <button className="btn btn-secondary" onClick={onOpenAuth} style={{ alignSelf: 'flex-start' }}>
-              Sign In / Register
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn-outline"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', borderColor: 'rgba(255,255,255,0.3)', padding: '10px 16px', fontSize: 13 }}
+              onClick={() => setShowMapModal(true)}
+            >
+              📍 Interactive Map
             </button>
-          )}
+            {!currentUser && (
+              <button className="btn btn-secondary" onClick={onOpenAuth} style={{ alignSelf: 'flex-start' }}>
+                Sign In / Register
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -101,7 +166,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               justifyContent: 'center',
               fontSize: 24,
               color: '#fff',
-              boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)'
+              boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
             }}>
               🚨
             </div>
@@ -110,16 +175,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Instant Emergency SOS
               </h3>
               <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                Tap to broadcast emergency alerts with live GPS location to your family contacts.
+                Tap to broadcast emergency app alerts with live GPS location to your connected contacts.
               </p>
             </div>
           </div>
           <button
             className="btn btn-danger"
             style={{ padding: '12px 24px', fontSize: 15, fontWeight: 700 }}
-            onClick={() => onNavigate('sos')}
+            onClick={onRequestSOS}
           >
-            Open SOS Trigger
+            Trigger Emergency SOS
           </button>
         </div>
       </div>
@@ -157,7 +222,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
               <span>0 dB</span>
-              <span style={{ color: 'var(--danger)', fontWeight: 700 }}>90.0 dB Alert Threshold</span>
+              <span style={{ color: 'var(--danger)', fontWeight: 700 }}>90.0 dB Alert Trigger</span>
               <span>120 dB</span>
             </div>
           </div>
@@ -174,17 +239,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="btn btn-secondary"
               onClick={() => onNavigate('monitoring')}
             >
-              Live Visualizer →
+              3-Tier Pipeline →
             </button>
           </div>
         </div>
 
-        {/* Card: Live GPS Status */}
+        {/* Card: Live GPS & Dashboard Location Sharing */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h3 className="card-title">📍 Live GPS Coordinates</h3>
-              <p className="card-subtitle">Real-time device Geolocation API</p>
+              <h3 className="card-title">📍 Live Location Sharing</h3>
+              <p className="card-subtitle">Real-time device Geolocation API &amp; Leaflet map</p>
             </div>
             <button
               onClick={handleFetchLocation}
@@ -212,15 +277,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-                <span>GPS Accuracy: ±{location.accuracy} meters</span>
-                <a
-                  href={location.googleMapsUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}
+                <span>GPS Accuracy: ±{location.accuracy}m</span>
+                <button
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer' }}
+                  onClick={() => setShowMapModal(true)}
                 >
-                  View on Google Maps ↗
-                </a>
+                  Open Interactive Map ↗
+                </button>
               </div>
             </div>
           ) : (
@@ -233,17 +296,37 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            Coordinates are automatically attached to all WhatsApp SOS broadcasts and verified emergency incidents.
-          </p>
+          {/* Action: Share My Location Button */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1, padding: '10px 16px', fontSize: 14 }}
+              onClick={handleShareLocation}
+            >
+              📡 Share My Location
+            </button>
+            <button
+              className="btn btn-outline"
+              style={{ padding: '10px 16px', fontSize: 14 }}
+              onClick={() => setShowMapModal(true)}
+            >
+              🗺️ Map View
+            </button>
+          </div>
+
+          {shareSuccess && (
+            <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--success-light)', color: 'var(--success)', borderRadius: 6, fontSize: 12, fontWeight: 700, textAlign: 'center' }}>
+              ✓ Live GPS location payload shared with connected contacts!
+            </div>
+          )}
         </div>
 
-        {/* Card: Emergency Family Contacts */}
+        {/* Card: Standalone App-to-App Connected Contacts */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h3 className="card-title">👥 Primary Emergency Contact</h3>
-              <p className="card-subtitle">Receives automated WhatsApp emergency alerts</p>
+              <h3 className="card-title">👥 Connected Contacts</h3>
+              <p className="card-subtitle">Standalone direct app-to-app alert recipients</p>
             </div>
             <button
               onClick={() => onNavigate('contacts')}
@@ -260,52 +343,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {primaryContact.name.charAt(0)}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-main)' }}>
-                    {primaryContact.name} ({primaryContact.relationship})
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{primaryContact.name}</span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>({primaryContact.relationship})</span>
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                    {primaryContact.phoneNumber}
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    {primaryContact.lastActive || 'Active on LifeGuard'}
                   </div>
                 </div>
               </div>
-              <span className="status-badge status-safe">Priority 1</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <span className={`badge ${primaryContact.connectionState === 'Connected' ? 'badge-success' : 'badge-warning'}`}>
+                  ● {primaryContact.connectionState || 'Connected'}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>Priority 1</span>
+              </div>
             </div>
           ) : (
             <div style={{ padding: 20, textAlign: 'center', background: 'var(--bg-app)', borderRadius: 10, marginTop: 12 }}>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>
-                No emergency contacts registered yet.
+                Zero connected trusted contacts registered.
               </p>
               <button className="btn btn-primary" onClick={() => onNavigate('contacts')} style={{ padding: '8px 16px', fontSize: 13 }}>
-                + Add Emergency Contact
+                + Connect Trusted Contact
               </button>
             </div>
           )}
         </div>
 
-        {/* Card: Safety Pipeline Architecture */}
+        {/* Card: 3-Tier Pipeline Architecture */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h3 className="card-title">⚙️ Safety Verification Pipeline</h3>
-              <p className="card-subtitle">Multi-stage false alarm filtering</p>
+              <h3 className="card-title">⚙️ 3-Tier Safety Engine</h3>
+              <p className="card-subtitle">Real-time false alarm rejection pipeline</p>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '6px 10px', background: 'var(--bg-app)', borderRadius: 6 }}>
-              <span style={{ color: 'var(--primary)', fontWeight: 800 }}>1</span>
-              <span>Sound Threshold: strictly &gt; 90.0 dB</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '8px 12px', background: 'var(--bg-app)', borderRadius: 6 }}>
+              <span style={{ color: 'var(--primary)', fontWeight: 800 }}>Tier 1</span>
+              <span>Sound Detection (Microphone Web Audio API &gt; 35 dB)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '6px 10px', background: 'var(--bg-app)', borderRadius: 6 }}>
-              <span style={{ color: 'var(--purple)', fontWeight: 800 }}>2</span>
-              <span>Human Vocal Formant Check (100 Hz – 3.5 kHz)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '8px 12px', background: 'var(--bg-app)', borderRadius: 6 }}>
+              <span style={{ color: 'var(--danger)', fontWeight: 800 }}>Tier 2</span>
+              <span>Evaluation Trigger strictly &gt; 90.0 dB</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '6px 10px', background: 'var(--bg-app)', borderRadius: 6 }}>
-              <span style={{ color: 'var(--warning)', fontWeight: 800 }}>3</span>
-              <span>Distress & Scream Spectral Check (1.2 kHz – 4 kHz)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '6px 10px', background: 'var(--bg-app)', borderRadius: 6 }}>
-              <span style={{ color: 'var(--danger)', fontWeight: 800 }}>4</span>
-              <span>Emergency Verification & Instant WhatsApp Dispatch</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, padding: '8px 12px', background: 'var(--bg-app)', borderRadius: 6 }}>
+              <span style={{ color: 'var(--purple-ai)', fontWeight: 800 }}>Tier 3</span>
+              <span>Human vs Environmental &amp; AI Scream / Distress Analysis</span>
             </div>
           </div>
         </div>
@@ -316,7 +401,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="card-header">
           <div>
             <h3 className="card-title">📋 Recent Incident Activity</h3>
-            <p className="card-subtitle">Verified emergency events and manual SOS triggers</p>
+            <p className="card-subtitle">Verified distress alerts and emergency dispatches</p>
           </div>
           <button
             onClick={() => onNavigate('history')}
@@ -343,15 +428,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               >
                 <div>
                   <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                    {inc.incidentType === 'AI_DETECTED' ? 'AI Sound Detection' : 'Manual SOS Trigger'}
+                    {inc.incidentType === 'AI_DETECTED'
+                      ? 'AI Sound Detection'
+                      : inc.incidentType === 'LOCATION_SHARE'
+                      ? 'Live Location Share'
+                      : 'Manual SOS Trigger'}
                     {inc.decibels ? ` (${inc.decibels.toFixed(1)} dB)` : ''}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {new Date(inc.createdAt).toLocaleString()}
                   </div>
                 </div>
-                <span className={`status-badge ${inc.alertStatus === 'OPENED_IN_WHATSAPP' || inc.alertStatus === 'ALERT_SENT' ? 'status-safe' : 'status-danger'}`}>
-                  {inc.alertStatus}
+                <span className={`badge ${inc.alertStatus === 'CANCELLED_SAFE' ? 'badge-warning' : 'badge-success'}`}>
+                  {inc.alertStatus === 'CANCELLED_SAFE' ? '✓ Cancelled (Safe)' : inc.alertStatus}
                 </span>
               </div>
             ))}
@@ -362,6 +451,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* Interactive Map Modal */}
+      <InteractiveMapModal
+        isOpen={showMapModal}
+        location={location}
+        onClose={() => setShowMapModal(false)}
+        onShareToContacts={handleShareLocation}
+      />
     </div>
   );
 };

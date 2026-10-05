@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MonitoringState,
   LiveSoundCheckState,
@@ -6,24 +6,22 @@ import {
   SoundLevelData,
   UserProfile,
   EmergencyContact,
-  GPSLocation,
 } from '../types';
 import { audioMonitoringService } from '../services/AudioMonitoringService';
-import { geolocationService } from '../services/GeolocationService';
 import { cloudStorageService } from '../services/CloudStorageService';
-import { whatsAppService } from '../services/WhatsAppService';
-import { webNotificationService } from '../services/WebNotificationService';
 
 interface MonitoringViewProps {
   currentUser: UserProfile | null;
   isMonitoring: boolean;
   onToggleMonitoring: () => void;
+  onRequestBufferModal: (params: { decibels: number; reason: string }) => void;
 }
 
 export const MonitoringView: React.FC<MonitoringViewProps> = ({
   currentUser,
   isMonitoring,
   onToggleMonitoring,
+  onRequestBufferModal,
 }) => {
   const [monitoringState, setMonitoringState] = useState<MonitoringState>(
     audioMonitoringService.getState()
@@ -37,17 +35,9 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
     isLoud: false,
     timestamp: new Date().toISOString(),
   });
-  const [waveformBars, setWaveformBars] = useState<number[]>(new Array(16).fill(0));
+  const [waveformBars, setWaveformBars] = useState<number[]>(new Array(16).fill(0.08));
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
-  const [gpsLocation, setGpsLocation] = useState<GPSLocation | null>(null);
-  const [lastAlertSentTime, setLastAlertSentTime] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Keep a stable ref so emergency callback never captures stale props
-  const userRef = useRef<UserProfile | null>(currentUser);
-  userRef.current = currentUser;
-  const contactsRef = useRef<EmergencyContact[]>(contacts);
-  contactsRef.current = contacts;
 
   // Load contacts
   useEffect(() => {
@@ -56,17 +46,8 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
     }
   }, [currentUser]);
 
-  // Fetch current GPS location silently
-  useEffect(() => {
-    geolocationService.getCurrentPosition().then((res) => {
-      if (res.success && res.location) {
-        setGpsLocation(res.location);
-      }
-    });
-  }, []);
-
   // Subscribe to real-time audio monitoring updates
-  // CRITICAL: This NEVER triggers route navigation. It only updates component local state.
+  // CRITICAL: NEVER navigates away from MonitoringView
   useEffect(() => {
     const unsubLevel = audioMonitoringService.onLevelUpdate((data, waveform) => {
       setSoundData(data);
@@ -80,59 +61,20 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
       setChecklist(newChecklist);
     });
 
-    const unsubEmergency = audioMonitoringService.onEmergencyVerified(async (event) => {
-      const user = userRef.current;
-      const contactList = contactsRef.current;
-
-      // 1. Send browser notification
-      webNotificationService.notifyEmergency(
-        'LifeGuard AI – Emergency Verified!',
-        `Loud sound detected (${event.decibels.toFixed(1)} dB). Please verify user safety.`
-      );
-
-      // 2. Refresh GPS coordinates for the alert
-      let loc = gpsLocation;
-      const locRes = await geolocationService.getCurrentPosition();
-      if (locRes.success && locRes.location) {
-        loc = locRes.location;
-        setGpsLocation(loc);
-      }
-
-      // 3. Save incident to cloud storage if user is logged in
-      if (user) {
-        await cloudStorageService.createIncident(user.id, {
-          incidentType: 'AI_DETECTED',
-          detectionResult: 'SCREAM',
-          soundLevel: event.soundLevel,
-          decibels: event.decibels,
-          confidence: 0.95,
-          humanSoundStatus: 'HUMAN_DETECTED',
-          latitude: loc?.latitude,
-          longitude: loc?.longitude,
-          locationAccuracy: loc?.accuracy,
-          alertStatus: contactList.length > 0 ? 'OPENED_IN_WHATSAPP' : 'NO_CONTACTS',
-        });
-      }
-
-      // 4. Dispatch WhatsApp to primary contact if available
-      if (contactList.length > 0 && user) {
-        const primary = contactList[0];
-        whatsAppService.dispatchAlert(
-          primary,
-          user,
-          `Verified Distress Scream (${event.decibels.toFixed(1)} dB > 90.0 dB threshold)`,
-          loc
-        );
-        setLastAlertSentTime(new Date().toLocaleTimeString());
-      }
+    const unsubBuffer = audioMonitoringService.onEmergencyBufferTrigger((event) => {
+      // Trigger the 5-second emergency safety buffer modal
+      onRequestBufferModal({
+        decibels: event.decibels,
+        reason: 'Acoustic Distress Scream Verified (>90.0 dB threshold)',
+      });
     });
 
     return () => {
       unsubLevel();
       unsubState();
-      unsubEmergency();
+      unsubBuffer();
     };
-  }, []);
+  }, [onRequestBufferModal]);
 
   const handleToggle = async () => {
     setErrorMessage(null);
@@ -152,44 +94,49 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
   const getStatusGlyph = (status: LiveSoundCheckStatus) => {
     switch (status) {
       case 'CONFIRMED':
-        return { glyph: '✓', text: 'Confirmed', className: 'status-confirmed' };
+        return { glyph: '✓', text: 'Confirmed', className: 'glyph-confirmed' };
       case 'CHECKING':
-        return { glyph: '⟳', text: 'Checking...', className: 'status-checking' };
+        return { glyph: '⟳', text: 'Analyzing...', className: 'glyph-checking' };
       case 'NOT_DETECTED':
-        return { glyph: '✗', text: 'Not detected', className: 'status-not-detected' };
+        return { glyph: '✗', text: 'Filtered / Not Detected', className: 'glyph-not-detected' };
       case 'UNAVAILABLE':
-        return { glyph: '⚠', text: 'Unavailable', className: 'status-unavailable' };
+        return { glyph: '⚠', text: 'Unavailable', className: 'glyph-unavailable' };
       case 'WAITING':
       default:
-        return { glyph: '○', text: 'Waiting', className: 'status-waiting' };
+        return { glyph: '○', text: 'Waiting', className: 'glyph-waiting' };
     }
   };
 
   return (
     <div className="view-container">
       {/* Notice regarding page stability */}
-      <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-border)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 18 }}>🛡️</span>
-        <span style={{ fontSize: 13, color: 'var(--primary-dark)', fontWeight: 500 }}>
-          <strong>Continuous Protection Mode:</strong> This monitoring screen remains permanently open and active during loud sound events. It will <em>never</em> automatically navigate back to Home.
+      <div style={{ background: 'var(--primary-light)', border: '1px solid var(--primary-glow)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 20 }}>🛡️</span>
+        <span style={{ fontSize: 13, color: 'var(--text-main)', fontWeight: 500 }}>
+          <strong>Continuous Protection Mode:</strong> This monitoring screen stays permanently open and active during loud acoustic spikes. It will <em>never</em> automatically navigate back to Home.
         </span>
       </div>
 
       {errorMessage && (
-        <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger-border)', color: 'var(--danger)', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-          {errorMessage}
+        <div style={{ background: 'var(--danger-light)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: 14, borderRadius: 10, marginBottom: 16, fontSize: 13 }}>
+          <strong>Microphone Error:</strong> {errorMessage}
+          <div style={{ marginTop: 8 }}>
+            <button className="btn btn-outline" style={{ padding: '6px 14px', fontSize: 12, borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={handleToggle}>
+              Retry Microphone Access ↻
+            </button>
+          </div>
         </div>
       )}
 
       {/* Main Monitoring Gauge Card */}
       <div className="card" style={{ textAlign: 'center', padding: '32px 20px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, background: isMonitoring ? 'rgba(16, 185, 129, 0.1)' : 'rgba(100, 116, 139, 0.1)', color: isMonitoring ? 'var(--safe)' : 'var(--text-muted)', fontWeight: 700, fontSize: 13, marginBottom: 16 }}>
-          <span className={isMonitoring ? 'live-dot' : ''} style={{ background: isMonitoring ? 'var(--safe)' : 'var(--text-muted)' }} />
-          <span>{isMonitoring ? 'MONITORING ACTIVE — LISTENING' : 'AUDIO MONITORING STOPPED'}</span>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, background: isMonitoring ? 'rgba(16, 185, 129, 0.12)' : 'rgba(100, 116, 139, 0.12)', color: isMonitoring ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700, fontSize: 13, marginBottom: 16 }}>
+          <span className={isMonitoring ? 'live-dot' : ''} style={{ background: isMonitoring ? 'var(--success)' : 'var(--text-muted)' }} />
+          <span>{isMonitoring ? 'MONITORING ACTIVE — WEB AUDIO API LISTENING' : 'AUDIO PROTECTION STANDBY'}</span>
         </div>
 
         {/* Big Decibel Meter */}
-        <div style={{ margin: '16px 0' }}>
+        <div style={{ margin: '14px 0' }}>
           <div style={{
             fontSize: 64,
             fontWeight: 900,
@@ -202,7 +149,7 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
             <span style={{ fontSize: 24, fontWeight: 600, marginLeft: 6, color: 'var(--text-muted)' }}>dB</span>
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8 }}>
-            Threshold: strictly <strong style={{ color: 'var(--danger)' }}>&gt; 90.0 dB</strong>
+            Evaluation Trigger: strictly <strong style={{ color: 'var(--danger)' }}>&gt; 90.0 dB</strong>
             {soundData.decibels > 90 && (
               <span style={{ color: 'var(--danger)', fontWeight: 800, marginLeft: 8 }}>
                 [ABOVE 90 dB THRESHOLD]
@@ -212,24 +159,23 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
         </div>
 
         {/* 16-Bar Responsive Equalizer Waveform */}
-        <div className="audio-visualizer-bars" style={{ maxWidth: 460, margin: '24px auto', height: 60 }}>
+        <div className="waveform-container" style={{ maxWidth: 460, margin: '20px auto', height: 60 }}>
           {waveformBars.map((height, i) => (
             <div
               key={i}
-              className="waveform-bar"
+              className={`waveform-bar ${soundData.decibels > 90 ? 'loud' : ''}`}
               style={{
                 height: isMonitoring ? `${Math.max(8, height * 100)}%` : '8%',
-                background: soundData.decibels > 90 ? 'var(--danger)' : undefined,
               }}
             />
           ))}
         </div>
 
-        {/* Control Button */}
+        {/* Start / Stop Toggle */}
         <div style={{ marginTop: 20 }}>
           <button
             className={`btn ${isMonitoring ? 'btn-danger' : 'btn-primary'}`}
-            style={{ padding: '14px 36px', fontSize: 16, fontWeight: 700, minWidth: 220 }}
+            style={{ padding: '14px 36px', fontSize: 16, fontWeight: 800, minWidth: 230 }}
             onClick={handleToggle}
           >
             {isMonitoring ? '⏹ Stop Audio Monitoring' : '▶ Start Audio Monitoring'}
@@ -237,156 +183,152 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
         </div>
       </div>
 
-      {/* LIVE SOUND CHECK Checklist */}
+      {/* Dynamic 3-Tier Visual Decision Checklist */}
       <div className="card" style={{ marginTop: 20 }}>
         <div className="card-header">
           <div>
-            <h3 className="card-title">🔍 LIVE SOUND CHECK</h3>
-            <p className="card-subtitle">Real-time multi-stage verification status</p>
+            <h3 className="card-title">🔍 Dynamic 3-Tier Audio Analysis Pipeline</h3>
+            <p className="card-subtitle">Real-time visual decision checklist with strict &gt;90.0 dB trigger</p>
           </div>
-          <span className="status-badge status-safe" style={{ fontSize: 11 }}>
-            Strict &gt; 90.0 dB Rule
+          <span className="badge badge-primary" style={{ fontSize: 11 }}>
+            Strict &gt;90 dB Rule
           </span>
         </div>
 
-        <div className="sound-check-list" style={{ marginTop: 16 }}>
-          {/* Step 1: Sound Detected */}
+        <div className="checklist-container" style={{ border: 'none', padding: 0, marginTop: 12 }}>
+          {/* Decision 1: Sound Detected */}
           {(() => {
             const item = getStatusGlyph(checklist.soundDetected);
             return (
-              <div className="sound-check-item">
-                <span className={`check-glyph ${item.className}`}>{item.glyph}</span>
-                <div className="check-text">
-                  <div className="check-title">1. Sound Detected</div>
-                  <div className="check-desc">Audio input received via browser microphone API</div>
+              <div className="checklist-item">
+                <div className="checklist-label">
+                  <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>1. Sound detected</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Ambient audio input received via browser Web Audio API</div>
+                  </div>
                 </div>
-                <span className={`check-status-badge ${item.className}`}>{item.text}</span>
+                <span className={`badge ${checklist.soundDetected === 'CONFIRMED' ? 'badge-success' : 'badge-warning'}`}>
+                  {item.text}
+                </span>
               </div>
             );
           })()}
 
-          {/* Step 2: Above 90 dB */}
+          {/* Decision 2: Level > 90 dB */}
           {(() => {
             const item = getStatusGlyph(checklist.above90dB);
             return (
-              <div className="sound-check-item">
-                <span className={`check-glyph ${item.className}`}>{item.glyph}</span>
-                <div className="check-text">
-                  <div className="check-title">2. Above 90.0 dB Threshold</div>
-                  <div className="check-desc">
-                    Strict trigger: 90.0 dB does not trigger; 90.1+ dB triggers analysis
+              <div className="checklist-item">
+                <div className="checklist-label">
+                  <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>2. Level &gt; 90 dB (Evaluation Trigger)</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      Strict evaluation trigger: 90.0 dB does not trigger; 90.1+ dB initiates Tier 3 classification
+                    </div>
                   </div>
                 </div>
-                <span className={`check-status-badge ${item.className}`}>{item.text}</span>
+                <span className={`badge ${checklist.above90dB === 'CONFIRMED' ? 'badge-danger' : 'badge-warning'}`}>
+                  {item.text}
+                </span>
               </div>
             );
           })()}
 
-          {/* Step 3: Human Sound Check */}
+          {/* Decision 3: Human vs. Environmental Sound Classification */}
           {(() => {
             const item = getStatusGlyph(checklist.humanSound);
             return (
-              <div className="sound-check-item">
-                <span className={`check-glyph ${item.className}`}>{item.glyph}</span>
-                <div className="check-text">
-                  <div className="check-title">3. Human Sound Check</div>
-                  <div className="check-desc">
-                    {checklist.humanSoundReason ||
-                      'Spectral classification distinguishes vocal formants from environmental noises (horns, slams, construction)'}
+              <div className="checklist-item">
+                <div className="checklist-label">
+                  <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>3. Human vs. Environmental sound classification</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {checklist.humanSoundReason ||
+                        'Spectral formant analysis rejects vehicle horns, slamming doors, dropped objects, and ambient clatter'}
+                    </div>
                   </div>
                 </div>
-                <span className={`check-status-badge ${item.className}`}>{item.text}</span>
+                <span className={`badge ${checklist.humanSound === 'CONFIRMED' ? 'badge-success' : checklist.humanSound === 'NOT_DETECTED' ? 'badge-danger' : 'badge-warning'}`}>
+                  {item.text}
+                </span>
               </div>
             );
           })()}
 
-          {/* Step 4: Distress / Scream Check */}
+          {/* Decision 4: AI Scream / Distress Analysis */}
           {(() => {
             const item = getStatusGlyph(checklist.distressScream);
             return (
-              <div className="sound-check-item">
-                <span className={`check-glyph ${item.className}`}>{item.glyph}</span>
-                <div className="check-text">
-                  <div className="check-title">4. Distress &amp; Scream Analysis</div>
-                  <div className="check-desc">
-                    {checklist.screamReason ||
-                      'High-frequency vocal tract resonance check (1.2 kHz - 4.0 kHz scream band)'}
+              <div className="checklist-item">
+                <div className="checklist-label">
+                  <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>4. AI Scream / Distress Analysis</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {checklist.screamReason ||
+                        'High-frequency vocal tract resonance check (1.2 kHz – 4.0 kHz distress scream band)'}
+                    </div>
                   </div>
                 </div>
-                <span className={`check-status-badge ${item.className}`}>{item.text}</span>
-              </div>
-            );
-          })()}
-
-          {/* Step 5: Emergency Verified */}
-          {(() => {
-            const item = getStatusGlyph(checklist.emergencyVerified);
-            return (
-              <div className="sound-check-item">
-                <span className={`check-glyph ${item.className}`}>{item.glyph}</span>
-                <div className="check-text">
-                  <div className="check-title">5. Emergency Verification</div>
-                  <div className="check-desc">
-                    {checklist.verificationReason ||
-                      'Confirmed emergency state — prepares immediate family contact alert'}
-                  </div>
-                </div>
-                <span className={`check-status-badge ${item.className}`}>{item.text}</span>
+                <span className={`badge ${checklist.distressScream === 'CONFIRMED' ? 'badge-danger' : 'badge-warning'}`}>
+                  {item.text}
+                </span>
               </div>
             );
           })()}
         </div>
       </div>
 
-      {/* Emergency Action & WhatsApp Dispatch Status */}
-      {checklist.emergencyVerified === 'CONFIRMED' && (
-        <div className="card" style={{ marginTop: 20, borderColor: 'var(--danger-border)', background: 'var(--danger-light)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--danger)', fontWeight: 800, fontSize: 18 }}>
-                <span>🚨</span> EMERGENCY INCIDENT VERIFIED
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--text-main)', marginTop: 4 }}>
-                A distress scream exceeding 90.0 dB was verified by the AI acoustic engine.
-                {lastAlertSentTime && ` Automated alert triggered at ${lastAlertSentTime}.`}
-              </p>
-            </div>
-            {contacts.length > 0 && currentUser && (
-              <button
-                className="btn btn-danger"
-                style={{ padding: '10px 20px', fontSize: 14, fontWeight: 700 }}
-                onClick={() => {
-                  whatsAppService.dispatchAlert(
-                    contacts[0],
-                    currentUser,
-                    `Verified Distress Scream (${soundData.decibels.toFixed(1)} dB > 90.0 dB threshold)`,
-                    gpsLocation
-                  );
-                }}
-              >
-                Send WhatsApp Alert to {contacts[0].name} ({contacts[0].phoneNumber}) ↗
-              </button>
-            )}
+      {/* Acoustic Simulation Suite (Mock Streams / Testing) */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">🧪 Audio Test &amp; Pipeline Simulation Suite</h3>
+            <p className="card-subtitle">Test real-time pipeline decisions without needing a loud environment</p>
           </div>
         </div>
-      )}
 
-      {/* Browser Limitations Notice */}
-      <div className="card" style={{ marginTop: 20, background: 'var(--bg-app)', borderStyle: 'dashed' }}>
-        <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-main)', marginBottom: 6 }}>
-          ℹ️ Web Browser Audio Information &amp; Technical Capabilities
-        </h4>
-        <ul style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.6, paddingLeft: 18, margin: 0 }}>
-          <li>
-            <strong>Web Audio Metering:</strong> Browser microphones capture relative Sound Pressure Level (SPL) normalized against ambient background baseline. For certified laboratory precision, dedicated hardware SPL meters are required.
-          </li>
-          <li>
-            <strong>Background Execution:</strong> Modern mobile web browsers (Safari iOS, Chrome Android) suspend Web Audio API input when the tab is placed in the background or when the phone screen is locked. Keep this tab visible for uninterrupted real-time protection.
-          </li>
-          <li>
-            <strong>Environmental Noise Rejection:</strong> Vehicle horns, loud traffic, door slams, dropped objects, and clapping are classified as <code>ENVIRONMENTAL_SOUND</code> and will not trigger emergency alarms.
-          </li>
-        </ul>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+          Click any sample stream below to verify how LifeGuard AI evaluates decibels, classifies vocal formants, filters environmental noises, and arms the 5-second buffer:
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+          <button
+            className="btn btn-outline"
+            style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: '12px 14px', fontSize: 13, textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+            onClick={() => audioMonitoringService.simulateAcousticEvent('SCREAM_95DB')}
+          >
+            <span style={{ fontWeight: 800 }}>▶ Simulate Distress Scream (95 dB)</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+              Passes &gt;90 dB, Human vocal + Scream verified → Arms 5s Buffer
+            </span>
+          </button>
+
+          <button
+            className="btn btn-outline"
+            style={{ borderColor: '#D97706', color: '#D97706', padding: '12px 14px', fontSize: 13, textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+            onClick={() => audioMonitoringService.simulateAcousticEvent('ENVIRONMENTAL_HORN_92DB')}
+          >
+            <span style={{ fontWeight: 800 }}>▶ Simulate Vehicle Horn (92 dB)</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+              Passes &gt;90 dB → Filtered at Tier 3 as ENVIRONMENTAL_SOUND
+            </span>
+          </button>
+
+          <button
+            className="btn btn-outline"
+            style={{ padding: '12px 14px', fontSize: 13, textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}
+            onClick={() => audioMonitoringService.simulateAcousticEvent('NORMAL_TALK_65DB')}
+          >
+            <span style={{ fontWeight: 800 }}>▶ Simulate Normal Speech (65 dB)</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+              Below 90.0 dB threshold → No evaluation triggered
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );

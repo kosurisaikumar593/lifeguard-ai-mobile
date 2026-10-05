@@ -1,5 +1,6 @@
-import React from 'react';
-import { ActiveTab, UserProfile } from '../types';
+import React, { useState, useEffect } from 'react';
+import { ActiveTab, UserProfile, ThemeMode } from '../types';
+import { themeService } from '../services/ThemeService';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -8,6 +9,7 @@ interface HeaderProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   isMonitoring: boolean;
+  isOffline?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +19,35 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onLogout,
   isMonitoring,
+  isOffline,
 }) => {
+  const [themeMode, setThemeMode] = useState<ThemeMode>(themeService.getMode());
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(themeService.getResolvedTheme());
+
+  useEffect(() => {
+    return themeService.subscribe((mode, resolved) => {
+      setThemeMode(mode);
+      setResolvedTheme(resolved);
+    });
+  }, []);
+
+  const cycleTheme = () => {
+    if (themeMode === 'auto') {
+      themeService.setMode('day');
+    } else if (themeMode === 'day') {
+      themeService.setMode('night');
+    } else {
+      themeService.setMode('auto');
+    }
+  };
+
+  const getThemeIcon = () => {
+    if (themeMode === 'auto') {
+      return resolvedTheme === 'dark' ? '🌙 (Auto)' : '☀️ (Auto)';
+    }
+    return themeMode === 'night' ? '🌙 Night' : '☀️ Day';
+  };
+
   return (
     <header className="app-header">
       <div className="brand-wrapper" onClick={() => onSelectTab('dashboard')}>
@@ -52,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
           className={`nav-link-btn ${activeTab === 'contacts' ? 'active' : ''}`}
           onClick={() => onSelectTab('contacts')}
         >
-          <span>👥</span> Emergency Contacts
+          <span>👥</span> Connected Contacts
         </button>
         <button
           className={`nav-link-btn ${activeTab === 'history' ? 'active' : ''}`}
@@ -64,16 +94,34 @@ export const Header: React.FC<HeaderProps> = ({
           className={`nav-link-btn ${activeTab === 'profile' ? 'active' : ''}`}
           onClick={() => onSelectTab('profile')}
         >
-          <span>⚙️</span> Settings
+          <span>⚙️</span> Settings &amp; Permissions
         </button>
       </nav>
 
       {/* Right Actions */}
       <div className="header-actions">
+        {/* Dynamic Day / Night Theme Button */}
+        <button
+          className="btn btn-outline"
+          style={{ padding: '6px 12px', fontSize: 12, borderRadius: 'var(--radius-full)' }}
+          onClick={cycleTheme}
+          title="Toggle Day/Night Safety Theme (Automatic switch at 6:00 PM)"
+        >
+          <span>{getThemeIcon()}</span>
+        </button>
+
+        {isOffline && (
+          <span className="badge badge-warning" style={{ fontSize: 11 }}>
+            ⚡ Offline
+          </span>
+        )}
+
         {currentUser ? (
           <div className="user-pill">
             <span>👤</span>
-            <span>{currentUser.fullName}</span>
+            <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {currentUser.fullName}
+            </span>
             <button
               onClick={onLogout}
               style={{

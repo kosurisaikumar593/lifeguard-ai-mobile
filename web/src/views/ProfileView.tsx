@@ -1,41 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, ThemeMode, PermissionState } from '../types';
 import { webNotificationService } from '../services/WebNotificationService';
 import { geolocationService } from '../services/GeolocationService';
+import { themeService } from '../services/ThemeService';
 
 interface ProfileViewProps {
   currentUser: UserProfile | null;
   onOpenAuth: () => void;
   onLogout: () => void;
+  isSimulatedOffline?: boolean;
+  onToggleSimulateOffline?: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
   currentUser,
   onOpenAuth,
   onLogout,
+  isSimulatedOffline,
+  onToggleSimulateOffline,
 }) => {
-  const [micStatus, setMicStatus] = useState<'granted' | 'prompt' | 'denied' | 'unknown'>('unknown');
-  const [geoStatus, setGeoStatus] = useState<'granted' | 'prompt' | 'denied' | 'unknown'>('unknown');
+  const [micStatus, setMicStatus] = useState<PermissionState>('prompt');
+  const [geoStatus, setGeoStatus] = useState<PermissionState>('prompt');
   const [notifStatus, setNotifStatus] = useState<string>('default');
+  const [themeMode, setThemeMode] = useState<ThemeMode>(themeService.getMode());
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(themeService.getResolvedTheme());
 
-  useEffect(() => {
-    // Check Notification status
+  const checkPermissions = async () => {
+    // 1. Notification
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotifStatus(Notification.permission);
     }
 
-    // Check Permissions API if supported
+    // 2. Microphone & Geolocation via Permissions API
     if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions
-        .query({ name: 'microphone' as any })
-        .then((res) => setMicStatus(res.state as any))
-        .catch(() => setMicStatus('unknown'));
+      try {
+        const mic = await navigator.permissions.query({ name: 'microphone' as any });
+        setMicStatus(mic.state as PermissionState);
+        mic.onchange = () => setMicStatus(mic.state as PermissionState);
+      } catch {
+        setMicStatus('prompt');
+      }
 
-      navigator.permissions
-        .query({ name: 'geolocation' as any })
-        .then((res) => setGeoStatus(res.state as any))
-        .catch(() => setGeoStatus('unknown'));
+      try {
+        const geo = await navigator.permissions.query({ name: 'geolocation' as any });
+        setGeoStatus(geo.state as PermissionState);
+        geo.onchange = () => setGeoStatus(geo.state as PermissionState);
+      } catch {
+        setGeoStatus('prompt');
+      }
     }
+  };
+
+  useEffect(() => {
+    checkPermissions();
+    return themeService.subscribe((mode, resolved) => {
+      setThemeMode(mode);
+      setResolvedTheme(resolved);
+    });
   }, []);
 
   const requestNotificationPermission = async () => {
@@ -52,6 +73,20 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     }
   };
 
+  const requestMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setMicStatus('granted');
+    } catch {
+      setMicStatus('denied');
+    }
+  };
+
+  const handleThemeChange = (mode: ThemeMode) => {
+    themeService.setMode(mode);
+  };
+
   if (!currentUser) {
     return (
       <div className="view-container">
@@ -59,7 +94,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           <div style={{ fontSize: 48, marginBottom: 12 }}>👤</div>
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>User Profile &amp; Settings</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: 14, maxWidth: 440, margin: '0 auto 20px' }}>
-            Log in to view your profile settings, configure audio threshold rules, and manage multi-device sync.
+            Log in to view your profile settings, configure audio threshold rules, and manage hardware permissions.
           </p>
           <button className="btn btn-primary" onClick={onOpenAuth}>
             Log In or Register
@@ -68,6 +103,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       </div>
     );
   }
+
+  const hasDeniedPermissions = micStatus === 'denied' || geoStatus === 'denied';
 
   return (
     <div className="view-container">
@@ -86,7 +123,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               justifyContent: 'center',
               fontSize: 26,
               fontWeight: 800,
-              boxShadow: '0 4px 12px rgba(13, 82, 214, 0.25)',
+              boxShadow: '0 4px 12px var(--primary-glow)',
             }}
           >
             {currentUser.fullName.charAt(0).toUpperCase()}
@@ -99,126 +136,89 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               {currentUser.mobileNumber} • {currentUser.email}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-              Account ID: <code>{currentUser.id}</code>
+              LifeGuard Account ID: <code>{currentUser.id}</code>
             </div>
           </div>
           <button
-            className="btn btn-secondary"
+            className="btn btn-outline"
             onClick={onLogout}
-            style={{ color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
+            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
           >
             Log Out
           </button>
         </div>
       </div>
 
-      {/* Safety & Threshold Configuration */}
+      {/* Dedicated Hardware Permissions Step (Feature 6 & 7) */}
       <div className="card" style={{ marginTop: 20 }}>
         <div className="card-header">
           <div>
-            <h3 className="card-title">⚙️ Safety Engine Configuration</h3>
-            <p className="card-subtitle">AI audio analysis and trigger parameters</p>
+            <h3 className="card-title">🔒 Dedicated Hardware Permissions Step</h3>
+            <p className="card-subtitle">Explicit permission status check required before activating protection</p>
           </div>
-          <span className="status-badge status-safe">Verified Settings</span>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
-          <div style={{ padding: 12, background: 'var(--bg-app)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Sound Trigger Threshold</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Strict trigger condition: 90.0 dB does not trigger; 90.1+ dB triggers analysis
-              </div>
-            </div>
-            <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--danger)', fontFamily: 'monospace' }}>
-              &gt; 90.0 dB
-            </span>
-          </div>
-
-          <div style={{ padding: 12, background: 'var(--bg-app)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Human Voice Formant Filter</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Rejects non-human sounds (traffic horns, slams, construction, music)
-              </div>
-            </div>
-            <span className="status-badge status-safe">Active (100 Hz – 3.5 kHz)</span>
-          </div>
-
-          <div style={{ padding: 12, background: 'var(--bg-app)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Distress Scream Frequency Band</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Vocal tract resonance concentration check
-              </div>
-            </div>
-            <span className="status-badge status-safe">1.2 kHz – 4.0 kHz</span>
-          </div>
-
-          <div style={{ padding: 12, background: 'var(--bg-app)', borderRadius: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Auto-Navigation Behavior</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Monitoring screen remains stable on sound trigger (zero unwanted navigation)
-              </div>
-            </div>
-            <span className="status-badge status-safe">Permanent Screen Lock</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Browser Permissions Status */}
-      <div className="card" style={{ marginTop: 20 }}>
-        <div className="card-header">
-          <div>
-            <h3 className="card-title">🔒 Browser Hardware Permissions</h3>
-            <p className="card-subtitle">Required browser APIs for acoustic safety and emergency location</p>
-          </div>
+          <button
+            onClick={checkPermissions}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+          >
+            Re-check Permissions ↻
+          </button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
           {/* Microphone */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--bg-app)', borderRadius: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-app)', borderRadius: 10 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>🎙️ Microphone (Web Audio API)</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Required for real-time sound decibel monitoring</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main)' }}>🎙️ Microphone (Web Audio API)</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Required for real-time ambient decibel sampling and distress classification</div>
             </div>
-            <span className={`status-badge ${micStatus === 'granted' ? 'status-safe' : 'status-waiting'}`}>
-              {micStatus === 'granted' ? 'Granted' : 'Click "Start Monitoring"'}
-            </span>
-          </div>
-
-          {/* Geolocation */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--bg-app)', borderRadius: 8 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>📍 Location (Geolocation API)</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Required to attach GPS coordinates to emergency alerts</div>
-            </div>
-            {geoStatus === 'granted' ? (
-              <span className="status-badge status-safe">Granted</span>
+            {micStatus === 'granted' ? (
+              <span className="badge badge-success">✓ Granted</span>
+            ) : micStatus === 'denied' ? (
+              <span className="badge badge-danger">✗ Denied</span>
             ) : (
               <button
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: 12 }}
-                onClick={requestGeolocationPermission}
+                className="btn btn-primary"
+                style={{ padding: '6px 14px', fontSize: 12 }}
+                onClick={requestMicPermission}
               >
-                Grant Access
+                Grant Microphone
               </button>
             )}
           </div>
 
-          {/* Notifications */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'var(--bg-app)', borderRadius: 8 }}>
+          {/* Location */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-app)', borderRadius: 10 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>🔔 Browser Notifications</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Shows immediate alerts on distress verification</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main)' }}>📍 Device Location (GPS API)</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Required to attach verified GPS coordinates and interactive maps to emergency dispatches</div>
             </div>
-            {notifStatus === 'granted' ? (
-              <span className="status-badge status-safe">Granted</span>
+            {geoStatus === 'granted' ? (
+              <span className="badge badge-success">✓ Granted</span>
+            ) : geoStatus === 'denied' ? (
+              <span className="badge badge-danger">✗ Denied</span>
             ) : (
               <button
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: 12 }}
+                className="btn btn-primary"
+                style={{ padding: '6px 14px', fontSize: 12 }}
+                onClick={requestGeolocationPermission}
+              >
+                Grant Location
+              </button>
+            )}
+          </div>
+
+          {/* Web Notifications */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-app)', borderRadius: 10 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main)' }}>🔔 System Notifications</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Alerts you if distress is classified while browsing other tabs</div>
+            </div>
+            {notifStatus === 'granted' ? (
+              <span className="badge badge-success">✓ Granted</span>
+            ) : (
+              <button
+                className="btn btn-outline"
+                style={{ padding: '6px 14px', fontSize: 12 }}
                 onClick={requestNotificationPermission}
               >
                 Enable Notifications
@@ -226,16 +226,98 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             )}
           </div>
         </div>
+
+        {/* Step-by-Step Permission Denied Guidance (Feature 7) */}
+        {hasDeniedPermissions && (
+          <div style={{ marginTop: 16, padding: 14, background: 'var(--danger-light)', border: '1px solid var(--danger)', borderRadius: 10 }}>
+            <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--danger)', marginBottom: 6 }}>
+              ⚠️ Permissions Denied — How to Re-enable in Browser:
+            </h4>
+            <ol style={{ fontSize: 12, color: 'var(--text-main)', paddingLeft: 18, lineHeight: 1.6 }}>
+              <li>Click the <strong>Lock / Tune icon</strong> located on the left of the browser URL bar.</li>
+              <li>Toggle <strong>Microphone</strong> and <strong>Location</strong> to <strong>"Allow"</strong>.</li>
+              <li>Click the <strong>"Re-check Permissions"</strong> button above or reload the page.</li>
+            </ol>
+          </div>
+        )}
       </div>
 
-      {/* Multi-Device Architecture Card */}
+      {/* Dynamic Day & Night Theme Selection (Feature 5) */}
       <div className="card" style={{ marginTop: 20 }}>
-        <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-main)', marginBottom: 6 }}>
-          ☁️ User Data Isolation &amp; Multi-Device Access
-        </h4>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
-          Your profile, emergency family contacts, and incident logs are scoped exclusively to your unique User ID (<code>{currentUser.id}</code>). When accessing LifeGuard AI from other phones, laptops, or tablets, logging in with your mobile number or email synchronizes your designated emergency contacts and history securely.
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">🌓 Dynamic Day &amp; Night Safety Theme</h3>
+            <p className="card-subtitle">Automatic 6:00 PM time-based switching or manual override</p>
+          </div>
+          <span className="badge badge-primary">
+            Active: {resolvedTheme === 'dark' ? 'Night (#0F172A)' : 'Day (#F8FAFC)'}
+          </span>
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+          Theme changes are purely visual and do not pause, restart, or reset active audio monitoring services.
         </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          <button
+            className={`btn ${themeMode === 'auto' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '12px 14px', fontSize: 13 }}
+            onClick={() => handleThemeChange('auto')}
+          >
+            ⏱️ Automatic (Time-Based)
+            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+              Day before 6 PM / Night after 6 PM
+            </div>
+          </button>
+
+          <button
+            className={`btn ${themeMode === 'day' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '12px 14px', fontSize: 13 }}
+            onClick={() => handleThemeChange('day')}
+          >
+            ☀️ Force Day Mode
+            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+              Light Background (#F8FAFC)
+            </div>
+          </button>
+
+          <button
+            className={`btn ${themeMode === 'night' ? 'btn-primary' : 'btn-outline'}`}
+            style={{ padding: '12px 14px', fontSize: 13 }}
+            onClick={() => handleThemeChange('night')}
+          >
+            🌙 Force Night Safety Mode
+            <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>
+              High-contrast Dark Slate (#0F172A)
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Fault-Tolerant Edge Testing Suite (Feature 7) */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">🧪 Edge State &amp; Fault-Tolerance Simulation</h3>
+            <p className="card-subtitle">Verify offline fallback screens and fault handling</p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 14, background: 'var(--bg-app)', borderRadius: 10 }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-main)' }}>Simulate Offline Mode</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Tests the offline warning banner and local fallback audio state
+            </div>
+          </div>
+          <button
+            className={`btn ${isSimulatedOffline ? 'btn-danger' : 'btn-outline'}`}
+            style={{ padding: '8px 16px', fontSize: 13 }}
+            onClick={onToggleSimulateOffline}
+          >
+            {isSimulatedOffline ? 'Disable Simulation' : 'Simulate Offline'}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ export type MonitoringState =
   | 'CHECKING_HUMAN'
   | 'HUMAN_DETECTED'
   | 'CHECKING_SCREAM'
+  | 'EMERGENCY_BUFFER'
   | 'EMERGENCY_VERIFIED'
   | 'ERROR';
 
@@ -62,13 +63,44 @@ export interface EmergencyContact {
   relationship: string;
   priorityOrder: number;
   createdAt: string;
+  connectionState: 'Connected' | 'Pending';
+  lastActive?: string;
+  deviceId?: string;
+}
+
+export type AlertDeliveryStatus = 'Sending' | 'Delivered' | 'Acknowledged';
+
+export interface AppAlertRecipient {
+  contactId: string;
+  name: string;
+  phoneNumber: string;
+  connectionState: 'Connected' | 'Pending';
+  deliveryStatus: AlertDeliveryStatus;
+  acknowledgedAt?: string;
+  responseNote?: string;
+}
+
+export interface AppAlertPayload {
+  id: string;
+  incidentId: string;
+  senderId: string;
+  senderName: string;
+  senderPhone: string;
+  timestamp: string;
+  type: 'AI_DISTRESS' | 'MANUAL_SOS' | 'LOCATION_SHARE';
+  soundLevel?: number;
+  decibels?: number;
+  location?: GPSLocation | null;
+  mapUrl: string;
+  overallStatus: 'DELIVERED' | 'ACKNOWLEDGED' | 'SENDING';
+  recipients: AppAlertRecipient[];
 }
 
 export interface EmergencyIncident {
   id: string;
   userId: string;
-  incidentType: 'AI_DETECTED' | 'MANUAL_SOS';
-  detectionResult: 'SCREAM' | 'MANUAL_TRIGGER' | 'FALSE_ALARM';
+  incidentType: 'AI_DETECTED' | 'MANUAL_SOS' | 'LOCATION_SHARE';
+  detectionResult: 'SCREAM' | 'MANUAL_TRIGGER' | 'FALSE_ALARM' | 'LOCATION_SHARED';
   soundLevel?: number;
   decibels?: number;
   confidence?: number;
@@ -77,8 +109,16 @@ export interface EmergencyIncident {
   longitude?: number;
   locationAccuracy?: number;
   locationAddress?: string;
-  alertStatus: 'ALERT_SENT' | 'OPENED_IN_WHATSAPP' | 'NO_CONTACTS' | 'ALERT_FAILED';
+  alertStatus:
+    | 'APP_ALERT_DELIVERED'
+    | 'APP_ALERT_ACKNOWLEDGED'
+    | 'ALERT_SENT'
+    | 'CANCELLED_SAFE'
+    | 'NO_CONTACTS'
+    | 'ALERT_FAILED';
   createdAt: string;
+  recipientsSummary?: string;
+  bufferCancelled?: boolean;
 }
 
 export interface GPSLocation {
@@ -87,6 +127,11 @@ export interface GPSLocation {
   accuracy: number;
   timestamp: number;
   googleMapsUrl: string;
+  formattedAddress?: string;
 }
 
 export type ActiveTab = 'dashboard' | 'monitoring' | 'sos' | 'history' | 'contacts' | 'profile';
+
+export type ThemeMode = 'auto' | 'day' | 'night';
+
+export type PermissionState = 'granted' | 'prompt' | 'denied' | 'unsupported';
