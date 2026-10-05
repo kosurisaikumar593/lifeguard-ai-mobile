@@ -14,16 +14,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab, is
         className={`bottom-tab-item ${activeTab === 'dashboard' ? 'active' : ''}`}
         onClick={() => onSelectTab('dashboard')}
       >
-        <span className="bottom-tab-icon">🏠</span>
-        <span>Home</span>
-      </button>
-
-      <button
-        className={`bottom-tab-item ${activeTab === 'monitoring' ? 'active' : ''}`}
-        onClick={() => onSelectTab('monitoring')}
-      >
         <span className="bottom-tab-icon" style={{ position: 'relative' }}>
-          🛡️
+          🏠
           {isMonitoring && (
             <span
               className="live-dot"
@@ -37,16 +29,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab, is
             />
           )}
         </span>
-        <span>Safety</span>
-      </button>
-
-      <button
-        className={`bottom-tab-item ${activeTab === 'sos' ? 'active' : ''}`}
-        onClick={() => onSelectTab('sos')}
-        style={{ color: 'var(--danger)', fontWeight: 800 }}
-      >
-        <span className="bottom-tab-icon">🚨</span>
-        <span>SOS</span>
+        <span>Home</span>
       </button>
 
       <button
@@ -54,7 +37,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab, is
         onClick={() => onSelectTab('contacts')}
       >
         <span className="bottom-tab-icon">👥</span>
-        <span>Family</span>
+        <span>Contacts</span>
       </button>
 
       <button
@@ -62,15 +45,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onSelectTab, is
         onClick={() => onSelectTab('history')}
       >
         <span className="bottom-tab-icon">📋</span>
-        <span>Alerts</span>
+        <span>History</span>
       </button>
 
       <button
         className={`bottom-tab-item ${activeTab === 'profile' ? 'active' : ''}`}
         onClick={() => onSelectTab('profile')}
       >
-        <span className="bottom-tab-icon">👤</span>
-        <span>Profile</span>
+        <span className="bottom-tab-icon">⚙️</span>
+        <span>Settings</span>
       </button>
     </nav>
   );

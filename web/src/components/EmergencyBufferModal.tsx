@@ -123,35 +123,36 @@ export const EmergencyBufferModal: React.FC<EmergencyBufferModalProps> = ({
           </div>
         </div>
 
-        {/* Actions: "I'm Safe" and "Send Alert Now" */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24 }}>
+        {/* Actions: "I'm Safe" (Blue secondary action) & "Send Alert Now" (Red primary action) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
+          {/* Primary Action: Send Alert Now */}
           <button
-            className="btn btn-block"
+            className="btn btn-danger btn-block"
             style={{
-              background: 'var(--success)',
-              color: '#FFFFFF',
               padding: '14px 20px',
               fontSize: 16,
               fontWeight: 800,
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
-            }}
-            onClick={onSafe}
-          >
-            ✓ I'm Safe (Cancel Alert)
-          </button>
-
-          <button
-            className="btn btn-outline btn-block"
-            style={{
-              borderColor: 'var(--danger)',
-              color: 'var(--danger)',
-              padding: '10px 18px',
-              fontSize: 14,
-              fontWeight: 700,
+              boxShadow: '0 4px 14px var(--danger-glow)',
             }}
             onClick={onDispatchNow}
           >
-            🚨 Send Alert Now (Bypass Timer)
+            🚨 Send Alert Now (Dispatch Immediately)
+          </button>
+
+          {/* Secondary Action: I'm Safe (Blue Secondary Action) */}
+          <button
+            className="btn btn-block"
+            style={{
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              border: '1.5px solid var(--primary)',
+              padding: '12px 20px',
+              fontSize: 15,
+              fontWeight: 700,
+            }}
+            onClick={onSafe}
+          >
+            🛡️ I'm Safe (Cancel Alert &amp; Reset)
           </button>
         </div>
 

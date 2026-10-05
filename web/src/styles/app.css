@@ -26,6 +26,28 @@
   }
 }
 
+/* Executive 2-Column Desktop Architecture */
+.executive-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 960px) {
+  .executive-dashboard-grid {
+    grid-template-columns: 1.15fr 0.95fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.dashboard-col-left,
+.dashboard-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* Header */
 .app-header {
   position: sticky;

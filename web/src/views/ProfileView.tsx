@@ -3,6 +3,7 @@ import { UserProfile, ThemeMode, PermissionState } from '../types';
 import { webNotificationService } from '../services/WebNotificationService';
 import { geolocationService } from '../services/GeolocationService';
 import { themeService } from '../services/ThemeService';
+import { cloudInferenceService } from '../services/CloudInferenceService';
 
 interface ProfileViewProps {
   currentUser: UserProfile | null;
@@ -24,6 +25,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const [notifStatus, setNotifStatus] = useState<string>('default');
   const [themeMode, setThemeMode] = useState<ThemeMode>(themeService.getMode());
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(themeService.getResolvedTheme());
+  const [cloudEndpoint, setCloudEndpoint] = useState<string>(cloudInferenceService.getEndpoint());
+  const [cloudApiKey, setCloudApiKey] = useState<string>(cloudInferenceService.getApiKey());
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+  const [apiSaveStatus, setApiSaveStatus] = useState<string | null>(null);
 
   const checkPermissions = async () => {
     // 1. Notification
@@ -291,6 +296,104 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               High-contrast Dark Slate (#0F172A)
             </div>
           </button>
+        </div>
+      </div>
+
+      {/* API-Only Infrastructure & Cloud Inference Configuration */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">☁️ Remote Cloud AI Inference API</h3>
+            <p className="card-subtitle">API-only architecture — zero local/on-device model training</p>
+          </div>
+          <span className="badge badge-success">
+            {cloudApiKey ? 'API Key Configured' : 'Deterministic Fallback Active'}
+          </span>
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
+          LifeGuard AI extracts lightweight audio descriptors (RMS, formants, decibels) in the browser and sends them to your remote AI inference endpoint. Lightweight and secure, avoiding browser lag.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: 'var(--text-main)' }}>
+              Inference Endpoint URL
+            </label>
+            <input
+              type="text"
+              className="input-field"
+              value={cloudEndpoint}
+              onChange={(e) => setCloudEndpoint(e.target.value)}
+              placeholder="https://api.lifeguard.ai/v1/audio/infer"
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 6, color: 'var(--text-main)' }}>
+              Cloud API Key
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                className="input-field"
+                value={cloudApiKey}
+                onChange={(e) => setCloudApiKey(e.target.value)}
+                placeholder="Enter Cloud AI / Gemini / LifeGuard API Key"
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ padding: '8px 12px', fontSize: 12 }}
+                onClick={() => setShowApiKey(!showApiKey)}
+              >
+                {showApiKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+            <button
+              className="btn btn-primary"
+              style={{ padding: '8px 20px', fontSize: 13 }}
+              onClick={() => {
+                cloudInferenceService.setEndpoint(cloudEndpoint);
+                cloudInferenceService.setApiKey(cloudApiKey);
+                setApiSaveStatus('Settings saved successfully!');
+                setTimeout(() => setApiSaveStatus(null), 3000);
+              }}
+            >
+              Save API Configuration
+            </button>
+            {apiSaveStatus && (
+              <span style={{ fontSize: 13, color: 'var(--success)', fontWeight: 700 }}>
+                ✓ {apiSaveStatus}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy & Zero-Audio Storage Safeguards */}
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">🛡️ Privacy &amp; Data Safeguards</h3>
+            <p className="card-subtitle">Strict metadata-only telemetry policy</p>
+          </div>
+          <span className="badge badge-primary">Zero Audio Storage</span>
+        </div>
+
+        <div style={{ fontSize: 13, color: 'var(--text-main)', lineHeight: 1.6 }}>
+          <p style={{ margin: '0 0 8px 0' }}>
+            <strong>LifeGuard AI guarantees complete privacy:</strong>
+          </p>
+          <ul style={{ paddingLeft: 20, margin: 0, color: 'var(--text-muted)' }}>
+            <li>No raw audio streams or voice recordings are ever stored or cached on-device.</li>
+            <li>No microphone audio is ever uploaded to permanent media storage.</li>
+            <li>Emergency incident logs contain strictly operational metadata: exact timestamp, GPS coordinates, interactive map URL, and delivery status.</li>
+          </ul>
         </div>
       </div>
 

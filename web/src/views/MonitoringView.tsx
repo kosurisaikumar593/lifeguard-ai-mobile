@@ -190,13 +190,18 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
             <h3 className="card-title">🔍 Dynamic 3-Tier Audio Analysis Pipeline</h3>
             <p className="card-subtitle">Real-time visual decision checklist with strict &gt;90.0 dB trigger</p>
           </div>
-          <span className="badge badge-primary" style={{ fontSize: 11 }}>
-            Strict &gt;90 dB Rule
-          </span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span className="badge badge-primary" style={{ fontSize: 11 }}>
+              Strict &gt;90 dB Rule
+            </span>
+            <span className="badge badge-success" style={{ fontSize: 11 }}>
+              API-Only Remote AI
+            </span>
+          </div>
         </div>
 
         <div className="checklist-container" style={{ border: 'none', padding: 0, marginTop: 12 }}>
-          {/* Decision 1: Sound Detected */}
+          {/* Decision 1: Sound detected */}
           {(() => {
             const item = getStatusGlyph(checklist.soundDetected);
             return (
@@ -204,8 +209,8 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
                 <div className="checklist-label">
                   <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>1. Sound detected</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Ambient audio input received via browser Web Audio API</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>[✓] Sound detected</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Ambient audio input received via Web Audio API stream</div>
                   </div>
                 </div>
                 <span className={`badge ${checklist.soundDetected === 'CONFIRMED' ? 'badge-success' : 'badge-warning'}`}>
@@ -223,7 +228,7 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
                 <div className="checklist-label">
                   <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>2. Level &gt; 90 dB (Evaluation Trigger)</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>[✓] Level &gt; 90 dB (Evaluation Trigger strictly &gt;90.0 dB)</div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       Strict evaluation trigger: 90.0 dB does not trigger; 90.1+ dB initiates Tier 3 classification
                     </div>
@@ -236,7 +241,7 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
             );
           })()}
 
-          {/* Decision 3: Human vs. Environmental Sound Classification */}
+          {/* Decision 3: Human sound vs. Environmental sound check (API integration structure) */}
           {(() => {
             const item = getStatusGlyph(checklist.humanSound);
             return (
@@ -244,10 +249,12 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
                 <div className="checklist-label">
                   <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>3. Human vs. Environmental sound classification</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                      Human sound vs. Environmental sound check (API integration structure)
+                    </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {checklist.humanSoundReason ||
-                        'Spectral formant analysis rejects vehicle horns, slamming doors, dropped objects, and ambient clatter'}
+                        'Spectral formant analysis via remote cloud API rejects horns, slamming doors, dropped objects, and ambient clatter'}
                     </div>
                   </div>
                 </div>
@@ -258,7 +265,7 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
             );
           })()}
 
-          {/* Decision 4: AI Scream / Distress Analysis */}
+          {/* Decision 4: AI Scream / Distress Analysis (API integration structure) */}
           {(() => {
             const item = getStatusGlyph(checklist.distressScream);
             return (
@@ -266,10 +273,12 @@ export const MonitoringView: React.FC<MonitoringViewProps> = ({
                 <div className="checklist-label">
                   <span className={`checklist-glyph ${item.className}`}>{item.glyph}</span>
                   <div>
-                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>4. AI Scream / Distress Analysis</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                      AI Scream / Distress Analysis (API integration structure)
+                    </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                       {checklist.screamReason ||
-                        'High-frequency vocal tract resonance check (1.2 kHz – 4.0 kHz distress scream band)'}
+                        'High-frequency vocal tract resonance check (1.2 kHz – 4.0 kHz distress scream band) via cloud inference'}
                     </div>
                   </div>
                 </div>
