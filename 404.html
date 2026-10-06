@@ -1,20 +1,1151 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="./icon.png" />
-    <link rel="apple-touch-icon" href="./icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <meta name="theme-color" content="#0D52D6" />
-    <meta name="description" content="LifeGuard AI — Standalone Mobile & Web Safety System. Real-time acoustic monitoring, >90 dB distress detection, GPS location sharing, and emergency contact alerts." />
-    <title>LifeGuard AI — Your Safety, Our Priority</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="./assets/index-CAAXdkY_.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CUht1jWM.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeGuard AI — Your Safety, Our Priority</title>
+  <link rel="icon" type="image/png" href="./logo.png" />
+  
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <!-- LifeGuard AI Stylesheet -->
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <!-- Top System Notice Bar -->
+  <div class="top-notice-bar">
+    <div class="status-item">
+      <span class="status-dot" id="serverStatusDot"></span>
+      <span id="serverStatusText" style="cursor: pointer;" onclick="navigateTo('settings')">Checking server connection...</span>
+    </div>
+    <div class="status-item">
+      <span>🔒 100% On-Device TensorFlow Lite ML &bull; Zero Cloud AI Audio APIs</span>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="#home" class="brand-link" onclick="navigateTo('home')">
+        <img src="./logo.png" alt="LifeGuard AI Logo" class="brand-logo" />
+        <div class="brand-info">
+          <span class="brand-title">LifeGuard AI</span>
+          <span class="brand-tagline">Your Safety, Our Priority</span>
+        </div>
+      </a>
+
+      <!-- Mobile Menu Button -->
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <!-- Public Navigation Links -->
+        <li class="public-nav-item"><a href="#home" onclick="navigateTo('home')" class="active">Home</a></li>
+        <li class="public-nav-item"><a href="#features" onclick="navigateTo('features')">Features</a></li>
+        <li class="public-nav-item"><a href="#how-it-works" onclick="navigateTo('how-it-works')">How It Works</a></li>
+        <li class="public-nav-item"><a href="#safety" onclick="navigateTo('safety')">Safety</a></li>
+        <li class="public-nav-item"><a href="#ml-info" onclick="navigateTo('ml-info')">ML Tech</a></li>
+        <li class="public-nav-item"><a href="#privacy" onclick="navigateTo('privacy')">Privacy</a></li>
+        <li class="public-nav-item"><a href="#download" onclick="navigateTo('download')" class="nav-cta-btn">Download App</a></li>
+        <li class="public-nav-item"><a href="#login" onclick="navigateTo('login')">Sign In</a></li>
+        <li class="public-nav-item"><a href="#register" onclick="navigateTo('register')">Register</a></li>
+
+        <!-- Authenticated Navigation Links -->
+        <li class="auth-nav-item"><a href="#dashboard" onclick="navigateTo('dashboard')">Dashboard</a></li>
+        <li class="auth-nav-item"><a href="#contacts" onclick="navigateTo('contacts')">Contacts</a></li>
+        <li class="auth-nav-item"><a href="#connections" onclick="navigateTo('connections')">Connections</a></li>
+        <li class="auth-nav-item"><a href="#history" onclick="navigateTo('history')">Emergency History</a></li>
+        <li class="auth-nav-item"><a href="#location" onclick="navigateTo('location')">Location</a></li>
+        <li class="auth-nav-item">
+          <a href="#notifications" onclick="navigateTo('notifications')">
+            Notifications <span class="badge-counter" id="notifNavBadge" style="display: none;">0</span>
+          </a>
+        </li>
+        <li class="auth-nav-item"><a href="#profile" onclick="navigateTo('profile')"><span id="userNavBadge">Profile</span></a></li>
+        <li class="auth-nav-item"><a href="#settings" onclick="navigateTo('settings')">Settings</a></li>
+        <li class="auth-nav-item"><a href="#admin" onclick="navigateTo('admin')" style="color: #60A5FA;">Admin</a></li>
+        <li class="auth-nav-item"><a href="#logout" onclick="logout()" style="color: #F87171;">Logout</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- Main Content Views Container -->
+  <main class="main-content">
+
+    <!-- ============================================================
+         1. VIEW: HOME
+         ============================================================ -->
+    <section id="view-home" class="view-section active">
+      <div class="hero-box">
+        <div class="hero-pill">✓ On-Device Machine Learning &bull; Zero Cloud Audio Reliance</div>
+        <h1 class="hero-title">LifeGuard AI</h1>
+        <h2 class="hero-subtitle">"Your Safety, Our Priority"</h2>
+        <p class="hero-desc">
+          An intelligent personal safety system designed to help users respond quickly to potential emergency situations.
+          Combines acoustic decibel monitoring, on-device neural sound classification, a 10-second safety confirmation countdown,
+          and automated emergency dispatch to trusted contacts.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#register" onclick="navigateTo('register')" class="btn btn-primary btn-lg">GET STARTED</a>
+          <a href="#download" onclick="navigateTo('download')" class="btn btn-outline btn-lg">DOWNLOAD APP</a>
+        </div>
+
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 8px;">
+          Honest Safety Notice: LifeGuard AI assists during potential distress situations. It does not replace national emergency services (112/108) or guarantee 100% acoustic capture under all environmental conditions.
+        </p>
+      </div>
+
+      <!-- Core Highlights Grid -->
+      <div class="section-header">
+        <h3 class="section-title">Intelligent Safety Capabilities</h3>
+        <p class="section-desc">Engineered for instantaneous response and maximum privacy protection.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">🎙️</div>
+          <h4 class="card-title">Smart Sound Detection</h4>
+          <p class="card-text">
+            Monitors surrounding acoustic decibel level locally. If sound reaches approximately 90 dB, triggers a 3-second audio capture for deeper neural analysis.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🧠</div>
+          <h4 class="card-title">On-Device TensorFlow Lite</h4>
+          <p class="card-text">
+            Runs a custom-trained Mobile Audio CNN (75.2 KB) directly on the smartphone. Classifies sound into Environmental, Human Normal, or Human Distress with zero cloud delay.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⏳</div>
+          <h4 class="card-title">10-Second Safety Confirmation</h4>
+          <p class="card-text">
+            If possible vocal distress is detected, launches the "Are You Safe?" screen with an interactive countdown. Users can tap "YES, I'M SAFE" to cancel, or "NO, HELP" / timeout triggers SOS.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🚨</div>
+          <h4 class="card-title">Manual SOS</h4>
+          <p class="card-text">
+            Users can immediately trigger emergency alerts at any moment via the prominent SOS button inside the mobile app or web portal.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <h4 class="card-title">Trusted Contacts Network</h4>
+          <p class="card-text">
+            Direct app-to-app invitation and linking. When an incident occurs, connected contacts receive immediate push notifications with coordinates and response options.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📍</div>
+          <h4 class="card-title">Live Incident Location</h4>
+          <p class="card-text">
+            Emergency incidents automatically capture GPS coordinates via the Android Fused Location Provider and synchronize with connected contacts on interactive maps.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         2. VIEW: FEATURES
+         ============================================================ -->
+    <section id="view-features" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">LifeGuard AI Features</h2>
+        <p class="section-desc">Comprehensive safety architecture built for reliability and real-world response.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-icon">🎙️</div>
+          <h3 class="card-title">1. Smart Sound Detection</h3>
+          <p class="card-text">
+            The Android application continuously samples ambient acoustic amplitude when monitoring is manually started by the user. An estimated ~90 dB sound level triggers a 3-second audio segment for deep feature extraction.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🚨</div>
+          <h3 class="card-title">2. Manual SOS</h3>
+          <p class="card-text">
+            Instant 1-touch emergency activation. Triggers loud audible siren, captures real-time GPS coordinates, and notifies all connected emergency recipients immediately.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">👥</div>
+          <h3 class="card-title">3. Trusted Contacts</h3>
+          <p class="card-text">
+            Connect trusted friends, family, and colleagues through LifeGuard AI. Features an authorized connection invitation flow to ensure mutual consent between safety contacts.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📍</div>
+          <h4 class="card-title">4. Live Location</h4>
+          <p class="card-text">
+            Captures high-accuracy latitude and longitude coordinates during emergency alerts. Contacts can view exact positions on an interactive OpenStreetMap view.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">🔔</div>
+          <h3 class="card-title">5. Emergency Alerts</h3>
+          <p class="card-text">
+            Emergency telemetry is dispatched across Firebase Cloud Messaging and stored securely in MySQL, enabling instant notification and response acknowledgement.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">📜</div>
+          <h3 class="card-title">6. Emergency History</h3>
+          <p class="card-text">
+            Complete incident audit logs with timestamps, detection sources, AI confidence scores, location history, and resolution outcomes.
+          </p>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+          <div class="card-icon">🔒</div>
+          <h3 class="card-title">7. Privacy & On-Device Security</h3>
+          <p class="card-text">
+            Audio processing is performed entirely on your device. Ambient audio is never recorded continuously or uploaded to cloud AI servers for classification.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         3. VIEW: HOW IT WORKS
+         ============================================================ -->
+    <section id="view-how-it-works" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">How LifeGuard AI Works</h2>
+        <p class="section-desc">The complete 9-step intelligent personal safety workflow.</p>
+      </div>
+
+      <div class="workflow-container">
+        <div class="workflow-step">
+          <div class="step-number">1</div>
+          <div class="step-details">
+            <h4>User Opens LifeGuard AI</h4>
+            <p>User launches the LifeGuard AI Android application on their smartphone.</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">2</div>
+          <div class="step-details">
+            <h4>User Manually Starts Monitoring</h4>
+            <p>The user explicitly taps "START MONITORING". Audio monitoring is never started automatically without user consent.</p>
+            <span class="step-highlight">Privacy Rule: Monitoring only runs when manually activated by the user.</span>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">3</div>
+          <div class="step-details">
+            <h4>Ambient Sound Level Monitoring</h4>
+            <p>The application measures surrounding sound levels in decibels (dB SPL) locally in memory.</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">4</div>
+          <div class="step-details">
+            <h4>~90 dB Analysis Trigger</h4>
+            <p>If estimated sound level reaches approximately 90 dB or above, deeper audio analysis is triggered.</p>
+            <span class="step-highlight">Important: 90 dB itself is NOT an emergency. It only triggers deeper analysis.</span>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">5</div>
+          <div class="step-details">
+            <h4>Short Audio Segment Capture</h4>
+            <p>The app captures a short 3.0-second PCM audio buffer (48,000 samples @ 16 kHz Mono).</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">6</div>
+          <div class="step-details">
+            <h4>Local Preprocessing & Mel Spectrogram</h4>
+            <p>Audio is transformed locally using Hann window, Radix-2 Cooley-Tukey FFT, and 64 Mel filterbanks into a Log-Mel Spectrogram matrix [1, 92, 64, 1].</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">7</div>
+          <div class="step-details">
+            <h4>TensorFlow Lite Classification</h4>
+            <p>Our custom on-device neural network (75.2 KB) classifies the sound into: Environmental, Human Normal, or Human Distress.</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">8</div>
+          <div class="step-details">
+            <h4>Safety Confirmation Screen (10s Countdown)</h4>
+            <p>If Human Distress confidence reaches the configured threshold (&ge; 70%), the app prompts: "Possible emergency detected. Are you safe?" with a 10-second countdown.</p>
+          </div>
+        </div>
+
+        <div class="workflow-step">
+          <div class="step-number">9</div>
+          <div class="step-details">
+            <h4>Emergency Activation or Cancellation</h4>
+            <p>
+              • <strong>YES, I'M SAFE:</strong> Incident is cancelled and saved as safe.<br>
+              • <strong>NO, HELP or 10-second timeout:</strong> Emergency workflow activates immediately, alerting connected contacts with GPS coordinates.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         4. VIEW: SAFETY & EMERGENCY SERVICES
+         ============================================================ -->
+    <section id="view-safety" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Emergency Services & Safety</h2>
+        <p class="section-desc">Quick access to national emergency resources and safety guidance.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" style="border-color: rgba(239, 68, 68, 0.4);">
+          <div class="card-icon">🚨</div>
+          <h3 class="card-title">112 — National Emergency Response</h3>
+          <p class="card-text" style="margin-bottom: 16px;">
+            The all-in-one national emergency number for immediate police, fire, or crisis response.
+          </p>
+          <a href="tel:112" class="btn btn-danger">CALL 112 NOW</a>
+        </div>
+
+        <div class="card" style="border-color: rgba(16, 185, 129, 0.4);">
+          <div class="card-icon">🚑</div>
+          <h3 class="card-title">108 — Emergency Medical / Ambulance</h3>
+          <p class="card-text" style="margin-bottom: 16px;">
+            Free 24x7 emergency medical transport and ambulance service.
+          </p>
+          <a href="tel:108" class="btn btn-success">CALL 108 NOW</a>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 48px;">
+        <h3 class="card-title">🌙 Automatic Night Safety Mode</h3>
+        <p class="card-text">
+          LifeGuard AI automatically adjusts its interface to a high-contrast dark theme between 6:00 PM and 6:00 AM, emphasizing rapid 1-touch SOS access and reducing screen distraction in low-light environments.
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">
+          Disclaimer: LifeGuard AI is a personal safety assistance application. Viewing this website or operating the app does not automatically dispatch police or ambulances. Always call 112 or 108 directly in life-threatening situations.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         5. VIEW: ML INFORMATION
+         ============================================================ -->
+    <section id="view-ml-info" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">On-Device Machine Learning Architecture</h2>
+        <p class="section-desc">Custom-trained neural network operating 100% on-device inside the Android app.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 32px;">
+        <h3 class="card-title">🔬 Neural Network Pipeline</h3>
+        <pre style="background: var(--bg-secondary); padding: 20px; border-radius: var(--radius-md); overflow-x: auto; color: #93C5FD; font-size: 0.88rem; line-height: 1.5;">
+16 kHz Mono Audio PCM Buffer (3.0 seconds, 48,000 samples)
+               │
+               ▼
+   AudioFeatureExtractor.java:
+   • Hann Window (N=1024, Hop=512)
+   • Radix-2 Cooley-Tukey FFT (513 frequency bins)
+   • 64 Triangular Mel Filterbanks (0 Hz – 8000 Hz)
+   • Log-Mel Spectrogram Matrix [1, 92, 64, 1]
+               │
+               ▼
+   TensorFlow Lite Classifier (lifeguard_audio_classifier.tflite - 75.2 KB):
+   • Conv2D (16 filters, 3x3) + BatchNorm + ReLU + MaxPool(2x2)
+   • Conv2D (32 filters, 3x3) + BatchNorm + ReLU + MaxPool(2x2)
+   • Conv2D (64 filters, 3x3) + BatchNorm + ReLU + GlobalAveragePooling2D
+   • Dense (64, ReLU, Dropout 0.3)
+   • Dense (3, Softmax Output)
+               │
+               ▼
+   Output Probabilities:
+   [0] environmental
+   [1] human_normal
+   [2] human_distress
+        </pre>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h4 class="card-title">Explicit ML Boundaries</h4>
+          <p class="card-text">
+            • <strong>No Speaker Identification:</strong> The model does NOT identify who is speaking.<br>
+            • <strong>No Owner Voice Matching:</strong> It does NOT determine whether the sound belongs to the phone owner or a stranger.<br>
+            • <strong>No Cloud AI:</strong> Zero API keys or cloud AI services are used for sound classification.
+          </p>
+        </div>
+
+        <div class="card">
+          <h4 class="card-title">Model Specification</h4>
+          <p class="card-text">
+            • Model Size: <strong>75.2 KB (TensorFlow Lite)</strong><br>
+            • Quantization: Float32 weights & activations<br>
+            • Classification Target: Distinguish environmental sounds, normal speech, and distress screams<br>
+            • Decision Threshold: Confidence &ge; 0.70 triggers safety confirmation
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         6. VIEW: PRIVACY
+         ============================================================ -->
+    <section id="view-privacy" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Privacy & Data Handling</h2>
+        <p class="section-desc">Transparent data practices grounded in privacy-first engineering.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 32px;">
+        <h3 class="card-title">Our Privacy Commitments</h3>
+        <p class="card-text" style="margin-bottom: 16px;">
+          • <strong>On-Device Audio Processing:</strong> All acoustic feature extraction and classification run strictly inside the Android device using TensorFlow Lite. Raw ambient audio is never streamed to any external cloud server.<br><br>
+          • <strong>Temporary In-Memory Buffers:</strong> When ~90 dB is reached, audio is stored in a temporary 3-second memory buffer and cleared after inference.<br><br>
+          • <strong>Location Data:</strong> GPS coordinates are captured only during active emergency events (manual SOS or confirmed distress) and transmitted solely to your connected emergency contacts.<br><br>
+          • <strong>Account Security:</strong> Passwords are encrypted using bcrypt salt hashing, and API authentication utilizes JSON Web Tokens (JWT).
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         7. VIEW: DOWNLOAD APP
+         ============================================================ -->
+    <section id="view-download" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">LifeGuard AI Android App</h2>
+        <p class="section-desc">Take LifeGuard AI with you and stay connected to your trusted contacts.</p>
+      </div>
+
+      <div class="card" style="max-width: 760px; margin: 0 auto 36px; text-align: center;">
+        <img src="./icon.png" alt="App Icon" style="width: 80px; height: 80px; border-radius: 18px; margin-bottom: 16px; box-shadow: var(--shadow-md);" />
+        <h3 class="card-title">LifeGuard AI &mdash; Production APK</h3>
+        <p class="card-text" style="margin-bottom: 24px;">
+          Version 1.0.0 &bull; Release Build &bull; Size: ~24.6 MB &bull; Requires Android 8.0+ (API 26+)
+        </p>
+
+        <div style="margin-bottom: 24px;">
+          <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk" class="btn btn-primary btn-lg" id="apkDownloadBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            DOWNLOAD ANDROID APP (APK)
+          </a>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Verified Asset URL: <code>https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk</code>
+        </p>
+      </div>
+
+      <!-- Installation Guide -->
+      <div class="card" style="max-width: 760px; margin: 0 auto 48px;">
+        <h4 class="card-title">Installation Instructions</h4>
+        <div class="card-text">
+          <p style="margin-bottom: 12px;"><strong>Method 1: Direct Mobile Install</strong></p>
+          <p style="margin-bottom: 16px;">
+            1. Tap the <strong>DOWNLOAD ANDROID APP</strong> button on your smartphone.<br>
+            2. Open the downloaded <code>LifeGuard-AI.apk</code> and tap <em>Install</em>.<br>
+            3. Grant the required permissions: <strong>Microphone</strong>, <strong>Location</strong>, and <strong>Notifications</strong>.
+          </p>
+          <p style="margin-bottom: 12px;"><strong>Method 2: Via ADB (Command Line)</strong></p>
+          <pre style="background: var(--bg-secondary); padding: 12px; border-radius: var(--radius-sm); color: #38BDF8;">adb install -r LifeGuard-AI.apk</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         8. VIEW: SIGN IN (LOGIN)
+         ============================================================ -->
+    <section id="view-login" class="view-section">
+      <div class="auth-box">
+        <div class="auth-header">
+          <h2>Welcome Back</h2>
+          <p>Sign in to your LifeGuard AI account</p>
+        </div>
+
+        <div id="loginAlert" class="form-alert"></div>
+
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label" for="loginMobile">Mobile Number</label>
+            <input type="tel" id="loginMobile" class="form-input" placeholder="e.g. 9876543210" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <div class="input-password-wrapper">
+              <input type="password" id="loginPassword" class="form-input" placeholder="Enter password" required />
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword', this)">Show</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; margin-top: 8px;">Sign In</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-secondary);">
+          Don't have an account? <a href="#register" onclick="navigateTo('register')">Register here</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         9. VIEW: REGISTER
+         ============================================================ -->
+    <section id="view-register" class="view-section">
+      <div class="auth-box">
+        <div class="auth-header">
+          <h2>Create Account</h2>
+          <p>Register for LifeGuard AI safety network</p>
+        </div>
+
+        <div id="regAlert" class="form-alert"></div>
+
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label" for="regName">Full Name</label>
+            <input type="text" id="regName" class="form-input" placeholder="e.g. Rahul Sharma" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regMobile">Mobile Number</label>
+            <input type="tel" id="regMobile" class="form-input" placeholder="e.g. 9876543210" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <div class="input-password-wrapper">
+              <input type="password" id="regPassword" class="form-input" placeholder="At least 6 characters" required />
+              <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('regPassword', this)">Show</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regConfirmPassword">Confirm Password</label>
+            <input type="password" id="regConfirmPassword" class="form-input" placeholder="Repeat password" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="regSubmitBtn" style="width: 100%; margin-top: 8px;">Create Account</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 20px; font-size: 0.9rem; color: var(--text-secondary);">
+          Already have an account? <a href="#login" onclick="navigateTo('login')">Sign in here</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         10. VIEW: USER DASHBOARD (AUTHENTICATED)
+         ============================================================ -->
+    <section id="view-dashboard" class="view-section">
+      <!-- Active Emergency Banner (Conditional) -->
+      <div id="activeEmergencyBanner" class="emergency-banner" style="display: none;">
+        <div class="emergency-banner-content">
+          <h3 id="activeEmergencyType">🚨 ACTIVE EMERGENCY ALERT</h3>
+          <p id="activeEmergencyLocation">Location coordinates synchronized with connected contacts.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-success" onclick="acknowledgeActiveEmergency()">I'M SAFE (ACKNOWLEDGE)</button>
+        </div>
+      </div>
+
+      <!-- Welcome Banner -->
+      <div style="margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: gap; gap: 16px;">
+        <div>
+          <h2 style="font-size: 2rem; font-weight: 800; color: #FFF;" id="dashGreeting">Hello, User 👋</h2>
+          <p style="color: var(--text-secondary); font-size: 1rem;">Your safety companion is ready.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn btn-danger" onclick="triggerManualSos()">🚨 TRIGGER SOS</button>
+        </div>
+      </div>
+
+      <!-- 6 Core Dashboard Cards -->
+      <div class="dashboard-metrics-grid">
+        <!-- 1. Monitoring Status -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Monitoring Status</span>
+            <span class="badge badge-neutral" id="dashMonitoringBadge">Monitoring OFF</span>
+          </div>
+          <div class="metric-value" style="font-size: 1.15rem; font-weight: 600;" id="dashMonitoringDesc">
+            Ambient sound level is monitored via the LifeGuard AI Android app.
+          </div>
+          <div class="metric-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <span>On-Device TFLite Engine</span>
+            <button class="btn btn-outline btn-sm" id="toggleMonitoringBtn" onclick="toggleMonitoringStatus()">Set Status: Active</button>
+          </div>
+        </div>
+
+        <!-- 2. Emergency Status -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Emergency Status</span>
+            <span class="badge badge-success" id="dashEmergencyBadge">NO ACTIVE EMERGENCY</span>
+          </div>
+          <div class="metric-value" style="font-size: 1.15rem; font-weight: 600;">
+            Real-Time Network Sync
+          </div>
+          <div class="metric-footer">
+            <span>Synchronized with MySQL & FCM</span>
+          </div>
+        </div>
+
+        <!-- 3. Trusted Contacts -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Trusted Contacts</span>
+            <span>👥</span>
+          </div>
+          <div class="metric-value" id="dashContactsCount">0</div>
+          <div class="metric-footer">
+            <a href="#contacts" onclick="navigateTo('contacts')">Manage Trusted Contacts &rarr;</a>
+          </div>
+        </div>
+
+        <!-- 4. Last Emergency -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Last Emergency</span>
+            <span>📜</span>
+          </div>
+          <div class="metric-value" style="font-size: 0.95rem; font-weight: 500;" id="dashLastIncidentText">
+            No emergency incidents recorded.
+          </div>
+          <div class="metric-footer">
+            <a href="#history" onclick="navigateTo('history')">View Full Incident History &rarr;</a>
+          </div>
+        </div>
+
+        <!-- 5. Location -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Latest Location</span>
+            <span>📍</span>
+          </div>
+          <div class="metric-value" style="font-size: 0.95rem; font-weight: 500;" id="dashLastLocationText">
+            Location unavailable.
+          </div>
+          <div class="metric-footer">
+            <a href="#location" onclick="navigateTo('location')">Open Map View &rarr;</a>
+          </div>
+        </div>
+
+        <!-- 6. Notifications -->
+        <div class="metric-tile">
+          <div class="metric-header">
+            <span>Unread Notifications</span>
+            <span>🔔</span>
+          </div>
+          <div class="metric-value" id="dashUnreadNotifs">0</div>
+          <div class="metric-footer">
+            <a href="#notifications" onclick="navigateTo('notifications')">View All Notifications &rarr;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         11. VIEW: TRUSTED CONTACTS
+         ============================================================ -->
+    <section id="view-contacts" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Trusted Contacts</h2>
+        <p class="section-desc">Manage connected emergency contacts in your LifeGuard AI safety network.</p>
+      </div>
+
+      <!-- Add Contact Form -->
+      <div class="card" style="margin-bottom: 32px;">
+        <h3 class="card-title">Send Contact Invitation</h3>
+        <form onsubmit="handleAddContact(event)" style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;">
+          <input type="text" id="newContactName" class="form-input" placeholder="Contact Name (optional)" style="flex: 1; min-width: 200px;" />
+          <input type="tel" id="newContactMobile" class="form-input" placeholder="Mobile Number (e.g. 9876543210)" style="flex: 1; min-width: 200px;" required />
+          <button type="submit" class="btn btn-primary">Send Invitation</button>
+        </form>
+      </div>
+
+      <!-- Incoming Connection Requests Box -->
+      <div id="incomingRequestsBox" class="card" style="margin-bottom: 32px; border-color: rgba(245, 158, 11, 0.4); display: none;">
+        <h3 class="card-title" style="color: #FCD34D;">Pending Incoming Connection Requests</h3>
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Requester Name</th>
+                <th>Mobile Number</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="incomingRequestsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Connected Contacts Table -->
+      <div class="card">
+        <h3 class="card-title">Connected Contacts List</h3>
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Connection Status</th>
+                <th>Date Connected</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="contactsTableBody"></tbody>
+          </table>
+          <div id="contactsEmptyState" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-text">No contacts connected yet.</div>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 6px;">Invite family or friends using the form above to build your safety circle.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         12. VIEW: APP-TO-APP CONNECTIONS
+         ============================================================ -->
+    <section id="view-connections" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Connect With Trusted People</h2>
+        <p class="section-desc">App-to-app connection system between LifeGuard AI users.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 32px;">
+        <h3 class="card-title">How App-to-App Linking Works</h3>
+        <p class="card-text">
+          LifeGuard AI uses mutual consent authentication. When you send an invite to a phone number:
+          <br><br>
+          1. <strong>User A sends invitation</strong> via mobile number.<br>
+          2. <strong>User B receives request</strong> in their LifeGuard AI notifications.<br>
+          3. <strong>User B accepts</strong> the invitation.<br>
+          4. <strong>Both users become connected</strong>, enabling automatic two-way emergency telemetry.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Quick Connection Action</h3>
+        <p class="card-text" style="margin-bottom: 16px;">You can view and accept incoming connection requests or manage your contacts directly in the Contacts section.</p>
+        <button class="btn btn-primary" onclick="navigateTo('contacts')">Go to Contacts Manager</button>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         13. VIEW: EMERGENCY HISTORY
+         ============================================================ -->
+    <section id="view-history" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Emergency History</h2>
+        <p class="section-desc">Audit records of previous safety incidents and alarms.</p>
+      </div>
+
+      <div class="card">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Incident ID</th>
+                <th>Date & Time</th>
+                <th>Emergency Type</th>
+                <th>Status</th>
+                <th>Location</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+          <div id="historyEmptyState" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">🛡️</div>
+            <div class="empty-state-text">No emergency incidents recorded.</div>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 6px;">Any triggered emergency alerts will be recorded and displayed here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         14. VIEW: EMERGENCY LOCATION
+         ============================================================ -->
+    <section id="view-location" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Emergency Location</h2>
+        <p class="section-desc">Real-time GPS coordinate telemetry captured during safety incidents.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 24px;">
+        <h3 class="card-title" id="locViewAddress">Location unavailable.</h3>
+        <p class="card-text" id="locViewCoords" style="color: #60A5FA; font-family: monospace;"></p>
+      </div>
+
+      <div class="card" style="padding: 12px;">
+        <div id="mapContainer" class="map-frame"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         15. VIEW: NOTIFICATIONS
+         ============================================================ -->
+    <section id="view-notifications" class="view-section">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="section-title" style="margin-bottom: 0;">In-App Notifications</h2>
+        <button class="btn btn-outline btn-sm" onclick="markNotificationsRead()">Mark All as Read</button>
+      </div>
+
+      <div id="notificationsList" style="margin-top: 24px;"></div>
+
+      <div id="notifsEmptyState" class="empty-state" style="display: none;">
+        <div class="empty-state-icon">🔔</div>
+        <div class="empty-state-text">No notifications found.</div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         16. VIEW: PROFILE
+         ============================================================ -->
+    <section id="view-profile" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">User Profile</h2>
+        <p class="section-desc">Manage your personal information and safety status.</p>
+      </div>
+
+      <div class="auth-box" style="max-width: 540px;">
+        <form onsubmit="handleUpdateProfile(event)">
+          <div class="form-group">
+            <label class="form-label" for="profNameInput">Full Name</label>
+            <input type="text" id="profNameInput" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Registered Mobile Number</label>
+            <div id="profMobileDisplay" style="padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-md); font-family: monospace;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Current Safety Status</label>
+            <div id="profStatusDisplay" style="padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-md); font-weight: 700; color: #10B981;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Member Since</label>
+            <div id="profJoinedDisplay" style="padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-md); color: var(--text-secondary);"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         17. VIEW: SETTINGS
+         ============================================================ -->
+    <section id="view-settings" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">Settings & Configuration</h2>
+        <p class="section-desc">Account, safety thresholds, and backend connectivity preferences.</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- API Server Configuration -->
+        <div class="card">
+          <h3 class="card-title">Backend API Server</h3>
+          <p class="card-text" style="margin-bottom: 16px;">
+            Configure the LifeGuard AI backend URL. Defaults to <code>http://localhost:5000</code> or your deployment host.
+          </p>
+
+          <form onsubmit="saveApiConfiguration(event)">
+            <div class="form-group">
+              <label class="form-label" for="cfgApiUrl">API Server Base URL</label>
+              <input type="text" id="cfgApiUrl" class="form-input" placeholder="http://localhost:5000" />
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="submit" class="btn btn-primary btn-sm">Save URL</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="pingCurrentServer()">Ping Server</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Safety Preferences -->
+        <div class="card">
+          <h3 class="card-title">Safety Preferences</h3>
+          <p class="card-text">
+            • <strong>Detection Trigger:</strong> ~90 dB SPL threshold<br>
+            • <strong>Safety Countdown:</strong> 10 seconds<br>
+            • <strong>Audio Window:</strong> 3.0 seconds (48,000 samples @ 16 kHz)<br>
+            • <strong>Night Mode:</strong> Auto-activates after 6:00 PM
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         18. VIEW: ADMIN DASHBOARD (MYSQL TELEMETRY)
+         ============================================================ -->
+    <section id="view-admin" class="view-section">
+      <div class="section-header">
+        <h2 class="section-title">System & Database Admin</h2>
+        <p class="section-desc">Live metrics queried directly from the LifeGuard AI MySQL database.</p>
+      </div>
+
+      <!-- Real DB Metrics -->
+      <div class="dashboard-metrics-grid">
+        <div class="metric-tile">
+          <div class="metric-header"><span>Total Users</span><span>👥</span></div>
+          <div class="metric-value" id="admTotalUsers">0</div>
+          <div class="metric-footer"><span>MySQL `users` table</span></div>
+        </div>
+
+        <div class="metric-tile">
+          <div class="metric-header"><span>Total Incidents</span><span>🚨</span></div>
+          <div class="metric-value" id="admTotalIncidents">0</div>
+          <div class="metric-footer"><span>MySQL `emergency_events`</span></div>
+        </div>
+
+        <div class="metric-tile">
+          <div class="metric-header"><span>Active Emergencies</span><span class="badge badge-danger">ALERT</span></div>
+          <div class="metric-value" id="admActiveIncidents">0</div>
+          <div class="metric-footer"><span>Status: 'alerted'</span></div>
+        </div>
+
+        <div class="metric-tile">
+          <div class="metric-header"><span>Resolved Incidents</span><span class="badge badge-success">SAFE</span></div>
+          <div class="metric-value" id="admResolvedIncidents">0</div>
+          <div class="metric-footer"><span>Cancelled / Acknowledged</span></div>
+        </div>
+
+        <div class="metric-tile">
+          <div class="metric-header"><span>Connected Contacts</span><span>🔗</span></div>
+          <div class="metric-value" id="admConnectedContacts">0</div>
+          <div class="metric-footer"><span>Status: 'connected'</span></div>
+        </div>
+
+        <div class="metric-tile">
+          <div class="metric-header"><span>Server Uptime</span><span>⏱️</span></div>
+          <div class="metric-value" id="admServerUptime">0s</div>
+          <div class="metric-footer"><span>Node.js process uptime</span></div>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card" style="margin-bottom: 32px;">
+        <h3 class="card-title">Registered Users</h3>
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Safety Status</th>
+                <th>Registered Date</th>
+              </tr>
+            </thead>
+            <tbody id="admUsersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Incidents Table -->
+      <div class="card">
+        <h3 class="card-title">Global Incident Log</h3>
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Location</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="admIncidentsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================
+       MODALS & DRAWERS
+       ============================================================ -->
+  <!-- 1. OTP Verification Modal -->
+  <div id="otpModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Verify Mobile Number</h3>
+        <button class="modal-close-btn" onclick="closeOtpModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-secondary); margin-bottom: 16px;">
+          Please enter the 6-digit numeric OTP sent to <strong id="otpMobileDisplay"></strong>.
+        </p>
+
+        <div id="otpDemoHint" style="padding: 12px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: var(--radius-md); color: #93C5FD; font-size: 0.88rem; margin-bottom: 20px;"></div>
+
+        <div id="otpAlert" class="form-alert"></div>
+
+        <form onsubmit="handleVerifyOtp(event)">
+          <input type="hidden" id="otpMobileInput" />
+          <div class="form-group">
+            <label class="form-label" for="otpCodeInput">6-Digit OTP Code</label>
+            <input type="text" id="otpCodeInput" class="form-input" maxlength="6" placeholder="123456" style="font-size: 1.5rem; text-align: center; letter-spacing: 0.25em;" required />
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="otpSubmitBtn" style="width: 100%;">Verify & Activate Account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Incident Details Modal -->
+  <div id="incidentDetailsModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Emergency Incident Details <span id="incModalId" style="color: #60A5FA;"></span></h3>
+        <button class="modal-close-btn" onclick="closeIncidentModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Date & Time</div>
+            <div id="incModalDate" style="font-weight: 600; color: #FFF;"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Detection Type</div>
+            <div id="incModalType" style="font-weight: 600; color: #FFF;"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">ML Classification</div>
+            <div id="incModalClass" style="font-weight: 600; color: #FFF;"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Confidence Score</div>
+            <div id="incModalConfidence" style="font-weight: 600; color: #60A5FA;"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Emergency Status</div>
+            <div id="incModalStatus" style="font-weight: 700; color: #EF4444;"></div>
+          </div>
+          <div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">User Response</div>
+            <div id="incModalResponse" style="font-weight: 600; color: #FFF;"></div>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Location Address</div>
+            <div id="incModalAddress" style="font-weight: 600; color: #FFF;"></div>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">GPS Coordinates</div>
+            <div id="incModalCoords" style="font-family: monospace; color: #38BDF8;"></div>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Contacts Notified</div>
+            <div id="incModalNotified" style="font-weight: 600; color: #10B981;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline btn-sm" onclick="closeIncidentModal()">Close</button>
+        <button class="btn btn-success btn-sm" id="incModalAckBtn" onclick="acknowledgeFromModal()">Acknowledge Emergency</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 2000; max-width: 360px;"></div>
+
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-col">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+          <img src="./logo.png" alt="LifeGuard AI" style="width: 32px; height: 32px; border-radius: 6px;" />
+          <span style="font-weight: 800; font-size: 1.15rem; color: #FFF;">LifeGuard AI</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 16px;">
+          "Your Safety, Our Priority" &mdash; Continuous ambient acoustic monitoring, on-device neural sound classification, and rapid emergency dispatch network.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h5>Platform</h5>
+        <ul>
+          <li><a href="#home" onclick="navigateTo('home')">Home</a></li>
+          <li><a href="#features" onclick="navigateTo('features')">Features</a></li>
+          <li><a href="#how-it-works" onclick="navigateTo('how-it-works')">How It Works</a></li>
+          <li><a href="#ml-info" onclick="navigateTo('ml-info')">On-Device ML Tech</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Safety & Privacy</h5>
+        <ul>
+          <li><a href="#safety" onclick="navigateTo('safety')">Safety Guidelines</a></li>
+          <li><a href="#privacy" onclick="navigateTo('privacy')">Privacy Policy</a></li>
+          <li><a href="tel:112">National Helpline: 112</a></li>
+          <li><a href="tel:108">Ambulance: 108</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h5>Downloads & Source</h5>
+        <ul>
+          <li><a href="#download" onclick="navigateTo('download')">Download Android APK</a></li>
+          <li><a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile" target="_blank" rel="noopener">GitHub Repository</a></li>
+          <li><a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases" target="_blank" rel="noopener">Official Releases</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 LifeGuard AI. All rights reserved. Open-source under MIT License.</p>
+      <p>Android Mobile Application &bull; On-Device TensorFlow Lite &bull; Node.js / MySQL</p>
+    </div>
+  </footer>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- LifeGuard AI Application Script -->
+  <script src="./app.js"></script>
+
+</body>
 </html>
