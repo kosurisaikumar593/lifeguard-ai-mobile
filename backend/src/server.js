@@ -27,8 +27,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Root / Health endpoint
-app.get('/', (req, res) => {
+const path = require('path');
+const websitePath = path.resolve(__dirname, '../../website');
+app.use(express.static(websitePath));
+
+// Health endpoint
+app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     app: 'LifeGuard AI Server',
@@ -54,12 +58,14 @@ const contactRoutes = require('./routes/contactRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const emergencyRoutes = require('./routes/emergencyRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 app.use('/api', authRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api', aiRoutes);
 app.use('/api/emergency', emergencyRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 Route handler
 app.use((req, res) => {

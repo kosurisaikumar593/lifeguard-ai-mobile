@@ -329,6 +329,61 @@ async function updateFcmToken(req, res) {
   }
 }
 
+/**
+ * Update Profile
+ * PUT /api/profile
+ */
+async function updateProfile(req, res) {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Name cannot be empty.' });
+    }
+
+    await db.query('UPDATE users SET name = ? WHERE id = ?', [name.trim(), req.user.id]);
+
+    const [users] = await db.query(
+      'SELECT id, name, mobile, safety_status, fcm_token, created_at FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully.',
+      user: users ? users[0] : null
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update profile.' });
+  }
+}
+
+/**
+ * Update Safety Status
+ * POST /api/profile/status
+ */
+async function updateSafetyStatus(req, res) {
+  try {
+    const { safety_status } = req.body;
+    const allowed = ['safe', 'distress', 'monitoring', 'idle'];
+    if (!safety_status || !allowed.includes(safety_status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid safety_status. Allowed values: ${allowed.join(', ')}`
+      });
+    }
+
+    await db.query('UPDATE users SET safety_status = ? WHERE id = ?', [safety_status, req.user.id]);
+
+    return res.json({
+      success: true,
+      message: `Safety status updated to ${safety_status}.`,
+      safety_status
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to update safety status.' });
+  }
+}
+
 module.exports = {
   register,
   verifyOtp,
@@ -336,5 +391,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getProfile,
+  updateProfile,
+  updateSafetyStatus,
   updateFcmToken
 };

@@ -12,6 +12,9 @@ router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
 router.get('/profile', verifyToken, authController.getProfile);
+router.put('/profile', verifyToken, authController.updateProfile);
+router.post('/profile/status', verifyToken, authController.updateSafetyStatus);
 router.post('/update-fcm-token', verifyToken, authController.updateFcmToken);
 
 module.exports = router;
+

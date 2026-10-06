@@ -61,6 +61,28 @@ function handleMockQuery(sql, params) {
 
   // 1. SELECT queries
   if (normalized.startsWith('SELECT')) {
+    if (normalized.includes('COUNT(*)')) {
+      if (normalized.includes('FROM USERS')) {
+        return [[{ total_users: mockDb.users.length, count: mockDb.users.length }], []];
+      }
+      if (normalized.includes('FROM EMERGENCY_EVENTS')) {
+        if (normalized.includes("STATUS = 'ALERTED'") || normalized.includes('EMERGENCY_STATUS = "ALERTED"')) {
+          const count = mockDb.emergency_events.filter(e => e.emergency_status === 'alerted').length;
+          return [[{ active_incidents: count, count }], []];
+        }
+        if (normalized.includes('RESOLVED') || normalized.includes('CANCELLED')) {
+          const count = mockDb.emergency_events.filter(e => ['cancelled', 'acknowledged', 'resolved'].includes(e.emergency_status)).length;
+          return [[{ resolved_incidents: count, count }], []];
+        }
+        return [[{ total_incidents: mockDb.emergency_events.length, count: mockDb.emergency_events.length }], []];
+      }
+      if (normalized.includes('FROM CONTACTS')) {
+        const count = mockDb.contacts.filter(c => c.status === 'connected').length;
+        return [[{ connected_contacts: count, count }], []];
+      }
+      return [[{ count: 0 }], []];
+    }
+
     if (normalized.includes('FROM USERS')) {
       if (normalized.includes('WHERE MOBILE =')) {
         const mobile = params[0];
@@ -113,7 +135,7 @@ function handleMockQuery(sql, params) {
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         return [rows, []];
       }
-      return [mockDb.emergency_events, []];
+      return [mockDb.emergency_events.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at)), []];
     }
 
     if (normalized.includes('FROM NOTIFICATIONS')) {
@@ -246,6 +268,20 @@ function handleMockQuery(sql, params) {
       const id = parseInt(params[1]);
       const user = mockDb.users.find(u => u.id === id);
       if (user) user.fcm_token = token;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    if (normalized.includes('SET SAFETY_STATUS')) {
+      const status = params[0];
+      const id = parseInt(params[1]);
+      const user = mockDb.users.find(u => u.id === id);
+      if (user) user.safety_status = status;
+      return [{ affectedRows: user ? 1 : 0 }, []];
+    }
+    if (normalized.includes('SET NAME')) {
+      const name = params[0];
+      const id = parseInt(params[1]);
+      const user = mockDb.users.find(u => u.id === id);
+      if (user) user.name = name;
       return [{ affectedRows: user ? 1 : 0 }, []];
     }
     return [{ affectedRows: 1 }, []];

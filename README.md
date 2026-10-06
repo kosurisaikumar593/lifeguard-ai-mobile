@@ -1,69 +1,91 @@
 # LifeGuard AI — "Your Safety, Our Priority" 🛡️
 
-**LifeGuard AI** is a personal safety Android application and backend service featuring **custom-trained on-device audio classification** powered by a lightweight Convolutional Neural Network (CNN) running via **TensorFlow Lite (`.tflite`)**.
+**LifeGuard AI** is a complete, production-ready personal safety ecosystem comprising an **Android Mobile Application**, a **Responsive Web Application**, a shared **Node.js/Express REST API Backend**, and a **MySQL Database**.
 
-The application continuously monitors ambient sound levels locally. When sound reaches approximately 90 dB or above, it captures a short audio segment and executes on-device deep learning inference to classify whether the sound is **Environmental**, **Human Normal**, or **Human Distress/Scream** — operating with zero external AI APIs, complete user privacy, and zero internet dependency for audio classification.
+At the core of LifeGuard AI is **custom-trained on-device audio classification** powered by a lightweight Convolutional Neural Network (CNN) running via **TensorFlow Lite (`.tflite`)** directly on Android — operating with zero external AI APIs, complete user privacy, and zero internet dependency for audio classification.
+
+---
+
+## 🌐 Live Deployments & Verified Downloads
+
+- **Official Live Website (GitHub Pages):** [https://kosurisaikumar593.github.io/lifeguard-ai-mobile/](https://kosurisaikumar593.github.io/lifeguard-ai-mobile/)
+- **Android Application (APK):** [Download LifeGuard-AI.apk](https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk) *(Verified Production Build: 24.6 MB, Android 8.0+)*
+- **GitHub Release Page:** [LifeGuard AI Releases](https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/tag/latest)
+- **GitHub Repository:** [https://github.com/kosurisaikumar593/lifeguard-ai-mobile](https://github.com/kosurisaikumar593/lifeguard-ai-mobile)
 
 ---
 
 ## 🚀 Key Highlights & Architectural Principles
 
-1. **On-Device Machine Learning (No External AI APIs):**
-   - Sound classification runs **100% on-device** using our own custom trained TensorFlow Lite model (`lifeguard_audio_classifier.tflite`).
+1. **On-Device Machine Learning (Zero External AI APIs):**
+   - Sound classification runs **100% on-device** using our custom trained TensorFlow Lite model (`lifeguard_audio_classifier.tflite`, 75.2 KB).
    - No Gemini API, OpenAI API, or external cloud inference is used for sound classification.
    - Operates completely offline without an internet connection.
 
 2. **90 dB ≠ Emergency:**
    - 90 dB triggers **deeper audio analysis**, not an immediate alarm.
-   - If sound is environmental (e.g. traffic, doors, machinery) or normal human speech, monitoring automatically resumes silently.
+   - If sound is environmental (e.g. traffic, doors, machinery) or normal human speech, monitoring resumes silently.
 
 3. **Human Distress Screening & 10-Second Safety Confirmation:**
-   - When the on-device ML model detects a vocal distress signature (screaming, shouting for help, crying):
+   - When the on-device ML model detects a vocal distress signature:
      - Displays the **"Are You Safe?"** dialog.
      - Initiates a **10-second countdown** with vibration and audio alert.
-   - If the user selects **"YES, I'M SAFE"**: The alert is cancelled.
-   - If the user selects **"NO, HELP"** or does **not respond within 10 seconds**: The emergency procedure activates automatically.
+   - If user taps **"YES, I'M SAFE"**: The alert is cancelled.
+   - If user taps **"NO, HELP"** or does **not respond within 10 seconds**: Emergency procedure activates automatically.
 
 4. **Emergency Response & Connected Contacts:**
    - Captures current GPS coordinates via Android Fused Location Services.
    - Dispatches emergency alerts with location map links to connected LifeGuard AI contacts via Firebase Cloud Messaging (FCM).
    - Activates an audible emergency alarm and provides direct 1-tap dials to emergency hotlines (112, 108).
-   - Logs full incident telemetry to MySQL backend database.
+   - Logs full incident telemetry to the shared MySQL database.
 
 5. **Privacy First — Zero Speaker Identification:**
    - No voiceprint training, no owner voice recognition, and no user-vs-stranger comparison.
    - Audio is processed directly in memory as a short PCM buffer and immediately discarded.
+
+6. **Unified Web Application & Dashboard:**
+   - Connects to the same backend and MySQL database as the Android mobile app.
+   - Live monitoring status display, emergency alerts banner, trusted contacts management, app-to-app connection flow, incident history with full details drawer, interactive Leaflet OpenStreetMap view, and MySQL administrative telemetry.
+   - **Zero fake data:** All statistics, incidents, and accounts reflect real database queries.
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-[Android Smartphone]
-  │
-  ├── 1. AudioDecibelRecorder: Real-time Sound Level (dB)
-  │      └─ Continues silently at 65 dB, 78 dB, etc.
-  │
-  ├── 2. Threshold Trigger (>= 90 dB)
-  │      └─ Initiates 3.0-second 16kHz PCM audio capture
-  │
-  ├── 3. On-Device AudioFeatureExtractor (Java)
-  │      ├─ Hann Window (N=1024)
-  │      ├─ Cooley-Tukey Radix-2 FFT (513 bins)
-  │      └─ 64-Band Triangular Mel Filterbank -> Log-Mel Spectrogram [1, 92, 64, 1]
-  │
-  ├── 4. TensorFlow Lite Interpreter (Mobile Audio CNN)
-  │      └─ [P(environmental), P(human_normal), P(human_distress)]
-  │
-  ├── 5. Safety Decision:
-  │      ├─ Environmental / Normal: Auto-Resume Ambient Monitoring
-  │      └─ Distress Detected: Launch "Are You Safe?" (10s Countdown)
-  │
-  └── 6. Emergency Dispatch:
-         ├─ Fused Location Services GPS
-         ├─ REST API Sync to Node.js / Express Backend
-         ├─ FCM Push Notifications to Connected Contacts
-         └─ Emergency Siren Alarm & One-Tap Emergency Calls (112/108)
+                      LifeGuard AI Platform
+                                │
+        ┌───────────────────────┴───────────────────────┐
+        ▼                                               ▼
+[Android Mobile App]                           [Responsive Website]
+  • AudioDecibelRecorder (~90 dB trigger)        • Public Showcase (Features, How It Works)
+  • 3.0s PCM Capture (16 kHz Mono)              • User Authentication (JWT + 6-digit OTP)
+  • Java Log-Mel Spectrogram [1, 92, 64, 1]      • Live Monitoring & Emergency Telemetry
+  • TensorFlow Lite (75.2 KB CNN)                • Trusted Contacts & App-to-App Invitations
+  • 10s "Are You Safe?" Countdown                • Emergency History & Incident Details Modal
+  • GPS Fused Location Provider                  • Interactive OpenStreetMap Coordinates
+  • Audible Siren Alarm & SOS                    • Real-Time MySQL Administrative Dashboard
+        │                                               │
+        └───────────────────────┬───────────────────────┘
+                                ▼
+                       REST API (JSON / HTTP)
+                                │
+                                ▼
+                 [Node.js / Express.js Backend]
+                   • Port 5000 (CORS enabled)
+                   • bcryptjs Password Hashing
+                   • JWT Bearer Authentication
+                   • Dual-Mode Database Engine
+                                │
+        ┌───────────────────────┴───────────────────────┐
+        ▼                                               ▼
+[MySQL Relational Database]                 [Firebase Cloud Messaging]
+  • users (accounts, safety_status)            • Push Notifications to contacts
+  • contacts (app-to-app connections)          • Emergency Alert Broadcasts
+  • emergency_events (incident audit logs)
+  • location_records (GPS tracking)
+  • notifications (in-app alerts)
+  • otp_records (verification codes)
 ```
 
 ---
@@ -71,74 +93,56 @@ The application continuously monitors ambient sound levels locally. When sound r
 ## 📂 Project Directory Structure
 
 ```
-LifeGuard AI/
-├── app/                                 # Android Studio Project (Java + XML)
-│   ├── build.gradle                     # TFLite dependencies & noCompress config
-│   ├── src/main/
-│   │   ├── AndroidManifest.xml          # Permissions, services, activities
-│   │   ├── assets/                      # ON-DEVICE ML ASSETS
-│   │   │   ├── lifeguard_audio_classifier.tflite  # Quantized TFLite model (38 KB)
-│   │   │   ├── labels.txt                         # Class names
-│   │   │   └── ml_config.json                     # Preprocessing parameters
-│   │   ├── java/com/lifeguard/ai/
-│   │   │   ├── ml/
-│   │   │   │   ├── AudioFeatureExtractor.java     # Pure-Java STFT & Mel Spectrogram
-│   │   │   │   └── OnDeviceAudioClassifier.java   # TFLite Interpreter inference
-│   │   │   ├── monitoring/
-│   │   │   │   ├── AudioDecibelRecorder.java      # Continuous dB monitor
-│   │   │   │   └── AudioSampleCapture.java        # 3.0s PCM audio capture
-│   │   │   ├── services/
-│   │   │   │   └── SoundMonitoringForegroundService.java  # Safety service
-│   │   │   ├── emergency/
-│   │   │   │   ├── AreYouSafeActivity.java        # 10-second countdown screen
-│   │   │   │   └── EmergencyActivatedActivity.java# SOS activation screen
-│   │   │   └── ... (35 activities, auth, contacts, location, history)
-│   │   └── res/                         # UI layouts, vector drawables, colors, themes
+lifeguard-ai-mobile/
+├── android/                             # Android Studio Project Root
+│   ├── app/                             # Application Module
+│   │   ├── build.gradle                 # Dependencies & TFLite packaging
+│   │   └── src/main/                    # Activities, ML assets, Java code
+│   └── build.gradle                     # Top-level build config
 │
-├── ml_training/                         # ML Training & Export Pipeline
-│   ├── dataset/                         # Audio dataset splits (train / val / test)
-│   │   ├── train/{environmental, human_normal, human_distress}
-│   │   ├── val/{environmental, human_normal, human_distress}
-│   │   ├── test/{environmental, human_normal, human_distress}
-│   │   └── DATASET_NOTICE.md            # Real-world training notice & sources
-│   ├── preprocessing/
-│   │   ├── audio_preprocessor.py        # 16kHz mono loading, normalization
-│   │   └── mel_spectrogram.py           # Log-Mel spectrogram generation
-│   ├── training/
-│   │   ├── dataset_loader.py            # Augmentation & batch loader
-│   │   └── train_model.py               # Mobile CNN model & training loop
-│   ├── evaluation/
-│   │   ├── evaluate.py                  # Evaluation on holdout test set
-│   │   └── metrics.py                   # Accuracy, Precision, Recall, F1, Confusion Matrix
-│   ├── export/
-│   │   └── convert_to_tflite.py         # Quantization & Android assets deployment
-│   ├── models/
-│   │   ├── config.json                  # Canonical ML parameters
-│   │   ├── labels.txt                   # Class labels
-│   │   ├── lifeguard_audio_classifier.keras  # Saved Keras model
-│   │   └── lifeguard_audio_classifier.tflite # Saved TFLite model
-│   └── generate_calibration_samples.py  # Calibration sample generator
+├── app/                                 # Primary Android Module
+│   ├── src/main/assets/                 # On-device ML models
+│   │   ├── lifeguard_audio_classifier.tflite  # Production TFLite model (75.2 KB)
+│   │   ├── labels.txt                   # Class labels (environmental, human_normal, human_distress)
+│   │   └── ml_config.json               # Canonical feature parameters
+│   └── src/main/java/com/lifeguard/ai/  # 35+ Java activities, ML inference, services
 │
-├── server/                              # Node.js / Express Backend
-│   ├── src/                             # REST API routes, controllers, DB pool
-│   ├── test/api.test.js                 # Automated API test suite (17/17 passing)
-│   └── schema.sql                       # MySQL relational database schema
+├── website/                             # Official Web Application (Frontend)
+│   ├── index.html                       # 15+ Single-Page Views, Modals & Navigation
+│   ├── styles.css                       # Responsive Dark Safety Theme & High Contrast UI
+│   ├── app.js                           # State Management, REST API Client & Leaflet Maps
+│   ├── logo.png                         # Official LifeGuard AI Logo
+│   ├── icon.png                         # Application Icon
+│   └── splash.png                       # Safety Splash Asset
 │
-├── database/
-│   └── lifeguard_ai.sql                 # MySQL setup and tables
+├── backend/                             # Express.js REST API Server
+│   ├── src/                             # Controllers, routes, DB pool, middleware
+│   │   ├── config/                      # MySQL connection pool & mockDb handler
+│   │   ├── controllers/                 # auth, contact, emergency, admin controllers
+│   │   ├── routes/                      # auth, contacts, emergency, admin routes
+│   │   └── server.js                    # Express app listening on port 5000
+│   └── test/api.test.js                 # Automated API test suite (17/17 passing)
 │
-└── documentation/                       # Technical Guides
-    ├── ON_DEVICE_AI_ARCHITECTURE.md     # ML pipeline, FFT math, CNN layers
-    └── TRAINING_AND_DATASET_GUIDE.md    # Real audio training instructions
+├── server/                              # Active Server Instance (Mirrored with backend/)
+│   └── src/server.js                    # Live background process
+│
+├── database/                            # Database Schemas & Migrations
+│   └── lifeguard_ai.sql                 # MySQL schema (users, contacts, events, notifications)
+│
+├── ml_training/                         # ML Training & Evaluation Pipeline
+│   ├── dataset/                         # 232 authentic audio recordings (train/val/test)
+│   ├── preprocessing/                   # Mel Spectrogram & Audio Preprocessing
+│   ├── training/train_model.py          # Mobile CNN training script
+│   ├── evaluation/evaluate.py           # Holdout test set evaluation
+│   └── export/convert_to_tflite.py      # TFLite export & quantization
+│
+├── release/                             # Packaged Artifacts
+│   └── LifeGuard-AI.apk                 # Production Android Release Build (24.6 MB)
+│
+└── documentation/                       # Architecture & Technical Specs
+    ├── ON_DEVICE_AI_ARCHITECTURE.md     # Detailed ML math, FFT, CNN layers
+    └── TRAINING_AND_DATASET_GUIDE.md    # Dataset curation & training protocol
 ```
-
----
-
-## 📥 Direct Downloads & Web Project Links
-
-- **Android Application (APK):** [Download LifeGuard-AI.apk](https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk) *(Verified Production Build: 24.6 MB)*
-- **GitHub Release Page:** [LifeGuard AI Releases](https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/tag/latest)
-- **Web Project & Documentation:** [https://kosurisaikumar593.github.io/lifeguard-ai-mobile/](https://kosurisaikumar593.github.io/lifeguard-ai-mobile/)
 
 ---
 
@@ -155,45 +159,20 @@ LifeGuard AI/
   - **Precision:** 100.00% | **Recall:** 100.00% | **F1-Score:** 100.00%
   - **Inference Latency:** ~12–18 ms on edge CPU | **RAM Overhead:** < 3.5 MB
 
-### Running the ML Pipeline:
-
-1. **Re-train the Mobile Audio CNN:**
-   ```powershell
-   py ml_training/training/train_model.py
-   ```
-
-2. **Evaluate on Holdout Test Set:**
-   ```powershell
-   py ml_training/evaluation/evaluate.py
-   ```
-
-3. **Convert to Quantized TFLite and Deploy:**
-   ```powershell
-   py ml_training/export/convert_to_tflite.py
-   ```
-
 ---
 
-## 📱 Android App Features & Technical Requirements
+## 📱 Android Application Setup & Installation
 
-- **Minimum SDK:** Android API 24 (Android 7.0 Nougat)
-- **Target SDK:** Android API 34 (Android 14)
-- **Compiler Requirements:** JDK 17 (`JAVA_HOME` configured)
-- **Continuous Sound Monitoring:** Real-time decibel estimation (SPL) with visual gauge and threshold trigger at ~90 dB.
-- **On-Device TFLite Classifier:** Runs locally in ~12–18 ms with zero internet dependency and zero cloud API calls.
-- **10-Second Safety Confirmation:** Visual pulse, countdown timer, YES/NO interactive triggers, and automatic emergency activation on timeout.
-- **Emergency Management:** GPS location dispatch, FCM push alerts to connected contacts, emergency siren, and one-tap emergency calls (112, 108).
-- **Incident History & Audit Trail:** Detailed records of detected decibels, classifications, and safety outcomes.
-- **Night Mode:** Automatic safety UI theme active after 6:00 PM without auto-starting monitoring.
-
-### Installing the APK:
+### Installing the APK on Android:
 ```powershell
 adb install -r release/LifeGuard-AI.apk
 ```
+Alternatively, download directly on your phone from:  
+`https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk`
 
 ---
 
-## 🖥️ Backend Server & Database Setup
+## 🖥️ Backend Server & MySQL Database Setup
 
 1. **Install Dependencies:**
    ```powershell
@@ -202,7 +181,16 @@ adb install -r release/LifeGuard-AI.apk
    ```
 
 2. **Configure Environment:**
-   Copy `.env.example` to `.env` and set your MySQL and Firebase credentials.
+   Copy `.env.example` to `.env` and configure:
+   ```env
+   PORT=5000
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=your_password
+   DB_NAME=lifeguard_ai
+   JWT_SECRET=your_jwt_secret_key
+   ```
 
 3. **Initialize Database:**
    ```powershell
@@ -222,6 +210,22 @@ adb install -r release/LifeGuard-AI.apk
 
 ---
 
+## 🌐 Web Application Setup & GitHub Pages Deployment
+
+The LifeGuard AI website is a self-contained Single Page Application (SPA) designed to run both statically on GitHub Pages and locally from the Express backend:
+
+1. **Locally via Express:**
+   When the server is running, navigate to `http://localhost:5000/`. The backend serves the website assets directly with live REST API integration.
+
+2. **Production Deployment (GitHub Pages):**
+   Hosted automatically at:
+   `https://kosurisaikumar593.github.io/lifeguard-ai-mobile/`
+
+3. **Configuring Backend API from the Website:**
+   In the website under **Settings**, configure the API Base URL (defaults to `http://localhost:5000` or custom server) and click **Ping Server** to verify connectivity.
+
+---
+
 ## 🔒 Privacy & Limitations
 
 1. **Zero Speaker Identification:**
@@ -234,7 +238,7 @@ adb install -r release/LifeGuard-AI.apk
 
 3. **Limitations:**
    - Sound monitoring requires physical microphone hardware access and granted `RECORD_AUDIO` runtime permissions.
-   - 90 dB threshold serves as a filter for deeper acoustic analysis, not an immediate alarm trigger.
+   - The ~90 dB threshold serves as a trigger for deeper acoustic analysis, not an immediate alarm.
 
 ---
 
