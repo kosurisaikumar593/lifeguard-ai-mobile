@@ -1,20 +1,402 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="./icon.png" />
-    <link rel="apple-touch-icon" href="./icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <meta name="theme-color" content="#0D52D6" />
-    <meta name="description" content="LifeGuard AI — Standalone Mobile & Web Safety System. Real-time acoustic monitoring, >90 dB distress detection, GPS location sharing, and emergency contact alerts." />
-    <title>LifeGuard AI — Your Safety, Our Priority</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="./assets/index-CAAXdkY_.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-CUht1jWM.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeGuard AI — Your Safety, Our Priority</title>
+  <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="apple-touch-icon" href="./icon.png" />
+  <meta name="theme-color" content="#0D52D6" />
+  <meta name="description" content="LifeGuard AI — Standalone Mobile & Web Safety System. On-device acoustic deep learning, >90 dB distress detection, GPS location sharing, and emergency contact alerts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0D52D6;
+      --primary-dark: #093BA0;
+      --primary-light: #E8F0FE;
+      --danger: #DC2626;
+      --danger-dark: #B91C1C;
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border: #334155;
+      --success: #10B981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Top Notice Bar */
+    .top-notice {
+      background: linear-gradient(90deg, #1E3A8A, #0D52D6);
+      color: #FFFFFF;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 64px 0 48px;
+      text-align: center;
+    }
+
+    .logo-img {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 24px;
+      filter: drop-shadow(0 10px 25px rgba(13, 82, 214, 0.4));
+      border-radius: 28px;
+    }
+
+    .title {
+      font-size: 3.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #FFFFFF 30%, #93C5FD);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #60A5FA;
+      margin-bottom: 20px;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 32px;
+    }
+
+    .description {
+      max-width: 720px;
+      margin: 0 auto 36px;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+    }
+
+    /* Action Buttons */
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 32px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 14px;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #0D52D6, #2563EB);
+      color: #FFFFFF;
+      box-shadow: 0 10px 25px rgba(13, 82, 214, 0.4);
+    }
+
+    .btn-download:hover {
+      background: linear-gradient(135deg, #093BA0, #1D4ED8);
+      transform: translateY(-2px);
+      box-shadow: 0 14px 30px rgba(13, 82, 214, 0.5);
+    }
+
+    .btn-github {
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 1px solid var(--border);
+    }
+
+    .btn-github:hover {
+      background: #334155;
+      transform: translateY(-2px);
+    }
+
+    /* Cards Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* Architecture Box */
+    .arch-box {
+      background: #0B1120;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 48px;
+    }
+
+    .arch-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #FFFFFF;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      background: #030712;
+      color: #93C5FD;
+      padding: 20px;
+      border-radius: 12px;
+      overflow-x: auto;
+      border: 1px solid #1F2937;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .footer-links a {
+      color: #60A5FA;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Notice Banner -->
+  <div class="top-notice">
+    WEB PROJECT / INFORMATION SHOWCASE &mdash; OFFICIAL PORTAL
+  </div>
+
+  <div class="container">
+    <!-- Hero Section -->
+    <header class="hero">
+      <img src="./logo.png" alt="LifeGuard AI Logo" class="logo-img" />
+      <h1 class="title">LifeGuard AI</h1>
+      <p class="tagline">"Your Safety, Our Priority"</p>
+      <div class="badge-pill">✓ 100% On-Device TensorFlow Lite AI &bull; Zero Cloud AI APIs</div>
+      <p class="description">
+        LifeGuard AI is an advanced personal safety system featuring real-time ambient acoustic monitoring,
+        threshold-activated deep sound analysis (~90 dB trigger), an interactive 10-second safety countdown,
+        and automated GPS emergency dispatch with app-to-app alert networking.
+      </p>
+
+      <!-- Primary Download & Action Buttons -->
+      <div class="cta-group">
+        <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk" class="btn btn-download">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          DOWNLOAD ANDROID APK (v1.0.0)
+        </a>
+        <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile" class="btn btn-github" target="_blank" rel="noopener">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+          VIEW GITHUB SOURCE
+        </a>
+      </div>
+    </header>
+
+    <!-- Key Features Grid -->
+    <section class="grid">
+      <div class="card">
+        <h3 class="card-title">🎙️ Continuous Sound Monitoring</h3>
+        <p class="card-text">
+          Measures surrounding sound level locally in decibels (dB SPL). At approximately 90 dB or above,
+          the system captures a short 3.0-second PCM audio buffer for deeper on-device intelligence.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🧠 On-Device Neural Network</h3>
+        <p class="card-text">
+          Trained Mobile Audio CNN running directly inside Android via TensorFlow Lite (75.2 KB).
+          Classifies sounds into Environmental, Human Normal, or Human Distress with zero cloud reliance.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">⏳ 10-Second Safety Confirmation</h3>
+        <p class="card-text">
+          Upon detecting potential vocal distress (&ge;70% confidence), launches the "Are You Safe?" screen.
+          Users can cancel with "YES, I'M SAFE", or trigger emergency with "NO, HELP" / timeout.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">📍 Automated Emergency SOS</h3>
+        <p class="card-text">
+          Captures live GPS coordinates via Android Fused Location Provider, triggers audible alarms,
+          and pushes instant incident telemetry to connected contacts through Firebase Cloud Messaging.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">👥 Emergency Contacts Network</h3>
+        <p class="card-text">
+          Direct app-to-app invitation and linking. When an incident activates, connected contacts
+          receive an interactive alert displaying map coordinates, sound levels, and acknowledge buttons.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🌙 Automatic Night Safety Mode</h3>
+        <p class="card-text">
+          Transitions into a high-visibility, dark safety theme after 6:00 PM, prioritizing SOS and
+          emergency access without automatically forcing microphone activation.
+        </p>
+      </div>
+    </section>
+
+    <!-- Architecture & ML Info -->
+    <section class="arch-box">
+      <h2 class="arch-title">🔬 On-Device Machine Learning Pipeline</h2>
+      <pre>
+Microphone Audio (16 kHz, 16-bit Mono PCM)
+                    │
+                    ▼
+          Is Sound Level >= 90 dB?
+                    │
+          ┌─────────┴─────────┐
+         NO                  YES
+          │                   │
+  Continue Monitoring         ▼
+                      Capture 3.0s Audio (48,000 samples)
+                              │
+                              ▼
+                      Java AudioFeatureExtractor:
+                      • Hann Window (N=1024, Hop=512)
+                      • Radix-2 Cooley-Tukey FFT (513 bins)
+                      • 64 Triangular Mel Filterbanks
+                      • Log-Mel Spectrogram [1, 92, 64, 1]
+                              │
+                              ▼
+                      TensorFlow Lite Interpreter (75.2 KB)
+                      • P(environmental), P(human_normal), P(human_distress)
+                              │
+                              ▼
+                      Confidence >= 0.70 & Distress?
+                              │
+          ┌───────────────────┴───────────────────┐
+         YES                                     NO
+          │                                       │
+          ▼                                       ▼
+  Are You Safe? (10s Countdown)           Silent Auto-Resume
+      </pre>
+    </section>
+
+    <!-- Installation Section -->
+    <section class="card" style="margin-bottom: 48px;">
+      <h3 class="card-title">📲 Installation Instructions</h3>
+      <div class="card-text">
+        <p style="margin-bottom: 12px;"><strong>Method 1: Direct Android Download</strong></p>
+        <p style="margin-bottom: 16px;">
+          1. Tap the <strong>DOWNLOAD ANDROID APK</strong> button on your Android device.<br>
+          2. Open the downloaded <code>LifeGuard-AI.apk</code> and tap <em>Install</em> (enable "Install unknown apps" if prompted).<br>
+          3. Launch LifeGuard AI and grant Microphone, Location, and Notification permissions.
+        </p>
+        <p style="margin-bottom: 12px;"><strong>Method 2: Via ADB (Developers)</strong></p>
+        <pre>adb install -r LifeGuard-AI.apk</pre>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases/download/latest/LifeGuard-AI.apk">Download APK</a>
+        <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile">GitHub Repository</a>
+        <a href="https://github.com/kosurisaikumar593/lifeguard-ai-mobile/releases">Releases</a>
+      </div>
+      <p>&copy; 2026 LifeGuard AI &mdash; "Your Safety, Our Priority". Licensed under MIT.</p>
+    </footer>
+  </div>
+
+</body>
 </html>
