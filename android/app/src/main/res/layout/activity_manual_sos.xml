@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg_light">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_back"
+            android:contentDescription="Back"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="EMERGENCY SOS"
+            android:textColor="@color/sos_red"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Select an immediate emergency action below"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnCall112"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="CALL 112 (UNIFIED POLICE/FIRE)"
+            android:backgroundTint="@color/primary_blue" />
+
+        <Button
+            android:id="@+id/btnCall108"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="CALL 108 (AMBULANCE SERVICE)"
+            android:backgroundTint="@color/sos_red" />
+
+        <Button
+            android:id="@+id/btnBroadcastEmergency"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="ALERT LIFEGUARD CONTACTS"
+            android:textColor="@color/surface_white"
+            android:backgroundTint="@color/sos_red_dark" />
+
+        <Button
+            android:id="@+id/btnNearbyHospitals"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="NEARBY HOSPITALS"
+            android:textColor="@color/primary_blue"
+            android:backgroundTint="@color/primary_blue_light" />
+
+        <Button
+            android:id="@+id/btnShareLocation"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="SHARE LIVE LOCATION"
+            android:textColor="@color/active_green_dark"
+            android:backgroundTint="@color/active_green_light" />
+
+        <Button
+            android:id="@+id/btnLoudAlarm"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="PLAY EMERGENCY ALARM"
+            android:textColor="@color/text_primary"
+            android:backgroundTint="@color/divider_border" />
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base LifeGuard AI Light Application Theme -->
+    <style name="Theme.LifeGuardAI" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_blue</item>
+        <item name="colorPrimaryVariant">@color/primary_blue_dark</item>
+        <item name="colorOnPrimary">@color/surface_white</item>
+        
+        <item name="colorSecondary">@color/active_green</item>
+        <item name="colorSecondaryVariant">@color/active_green_dark</item>
+        <item name="colorOnSecondary">@color/surface_white</item>
+
+        <item name="android:statusBarColor">@color/primary_blue</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/bg_light</item>
+    </style>
+
+    <!-- Splash Theme -->
+    <style name="Theme.LifeGuardAI.Splash" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/primary_blue</item>
+        <item name="android:statusBarColor">@color/primary_blue</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!-- Emergency Theme -->
+    <style name="Theme.LifeGuardAI.Emergency" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/sos_red_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">@color/surface_white</item>
+    </style>
+
+    <!-- Custom Button Styles -->
+    <style name="LifeGuardButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">52dp</item>
+    </style>
+</resources>

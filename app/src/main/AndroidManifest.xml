@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.lifeguard.ai">
+
+    <!-- LifeGuard AI Required Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <application
+        android:name=".LifeGuardApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LifeGuardAI"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="34">
+
+        <!-- Splash Screen Launcher -->
+        <activity
+            android:name=".auth.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.LifeGuardAI.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Onboarding & Auth Activities -->
+        <activity android:name=".auth.OnboardingActivity" android:exported="false" />
+        <activity android:name=".auth.GetStartedActivity" android:exported="false" />
+        <activity android:name=".auth.LoginActivity" android:exported="false" />
+        <activity android:name=".auth.RegisterActivity" android:exported="false" />
+        <activity android:name=".auth.OtpVerificationActivity" android:exported="false" />
+        <activity android:name=".auth.ForgotPasswordActivity" android:exported="false" />
+        <activity android:name=".auth.PermissionSetupActivity" android:exported="false" />
+
+        <!-- Main Dashboard -->
+        <activity
+            android:name=".home.MainActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+
+        <!-- Safety & Monitoring Activities -->
+        <activity android:name=".monitoring.LiveMonitoringActivity" android:exported="false" />
+        <activity
+            android:name=".emergency.AreYouSafeActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true" />
+        <activity android:name=".emergency.EmergencyActivatedActivity" android:exported="false" />
+        <activity android:name=".emergency.ManualSosActivity" android:exported="false" />
+        <activity android:name=".emergency.EmergencyAlarmActivity" android:exported="false" />
+        <activity android:name=".emergency.RecipientAlertActivity" android:exported="false" />
+
+        <!-- Location & Hospital Activities -->
+        <activity android:name=".location.LocationActivity" android:exported="false" />
+        <activity android:name=".location.NearbyHospitalsActivity" android:exported="false" />
+
+        <!-- Contacts & History Activities -->
+        <activity android:name=".contacts.AddContactActivity" android:exported="false" />
+        <activity android:name=".contacts.ContactDetailActivity" android:exported="false" />
+        <activity android:name=".history.IncidentDetailActivity" android:exported="false" />
+
+        <!-- Settings Activities -->
+        <activity android:name=".settings.ProfileActivity" android:exported="false" />
+        <activity android:name=".settings.NotificationSettingsActivity" android:exported="false" />
+        <activity android:name=".settings.MonitoringSettingsActivity" android:exported="false" />
+        <activity android:name=".settings.DayNightSettingsActivity" android:exported="false" />
+        <activity android:name=".settings.PrivacyActivity" android:exported="false" />
+        <activity android:name=".settings.HelpSafetyActivity" android:exported="false" />
+        <activity android:name=".settings.AboutActivity" android:exported="false" />
+
+        <!-- Background Sound Monitoring Foreground Service -->
+        <service
+            android:name=".services.SoundMonitoringForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- Firebase Cloud Messaging Receiver Service -->
+        <service
+            android:name=".notification.LifeGuardFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Power Button SOS Broadcast Receiver (If supported by device hardware) -->
+        <receiver
+            android:name=".services.PowerButtonReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.SCREEN_OFF" />
+                <action android:name="android.intent.action.SCREEN_ON" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>

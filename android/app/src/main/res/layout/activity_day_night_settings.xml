@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_light"
+    android:padding="24dp">
+
+    <ImageView
+        android:id="@+id/btnBack"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@drawable/ic_back"
+        android:contentDescription="Back"
+        android:background="?attr/selectableItemBackgroundBorderless" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Day / Night Safety Mode"
+        android:textColor="@color/text_primary"
+        android:textSize="26sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Automatic safety dashboard theme switching"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
+
+    <RadioGroup
+        android:id="@+id/rgThemeMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:background="@drawable/card_rounded"
+        android:padding="16dp">
+
+        <RadioButton
+            android:id="@+id/rbAutoSchedule"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Automatic Schedule (Recommended)\n• 6 AM – 6 PM: Day Mode\n• 6 PM – 6 AM: High-Contrast Night Mode"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:padding="8dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" android:layout_marginVertical="8dp" />
+
+        <RadioButton
+            android:id="@+id/rbAlwaysDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Always Day Mode (Light UI)"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:padding="8dp" />
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" android:layout_marginVertical="8dp" />
+
+        <RadioButton
+            android:id="@+id/rbAlwaysNight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Always Night Mode (High-Contrast Dark UI)"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:padding="8dp" />
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/card_rounded"
+        android:padding="14dp"
+        android:text="ℹ️ Safety Notice: Theme changes adjust visual visibility and do NOT automatically start sound monitoring."
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp" />
+
+    <Button
+        android:id="@+id/btnSaveThemeMode"
+        style="@style/LifeGuardButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:text="SAVE SCHEDULE"
+        android:backgroundTint="@color/primary_blue" />
+
+</LinearLayout>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/bg_light">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SETTINGS"
+            android:textColor="@color/text_primary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Preferences &amp; Safety Controls"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <!-- User Profile Card -->
+        <LinearLayout
+            android:id="@+id/btnSettingProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/card_rounded"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/tvSettingsAvatar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/circle_sos"
+                android:backgroundTint="@color/primary_blue"
+                android:gravity="center"
+                android:text="SK"
+                android:textColor="@color/surface_white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="14dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvSettingsUserName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Saikumar Kosuri"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSettingsUserMobile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="+91 93400 01122"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Settings List Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/card_rounded"
+            android:orientation="vertical">
+
+            <!-- Item: Monitoring Settings -->
+            <TextView
+                android:id="@+id/btnSettingMonitoring"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="🎙️ Sound Monitoring &amp; Threshold"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: Day / Night Safety Mode -->
+            <TextView
+                android:id="@+id/btnSettingDayNight"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="🌙 Day / Night Safety Mode"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: Notifications -->
+            <TextView
+                android:id="@+id/btnSettingNotifications"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="🔔 Notification Settings"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: Permissions -->
+            <TextView
+                android:id="@+id/btnSettingPermissions"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="🛡️ App Permissions"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: Privacy & Audio Policy -->
+            <TextView
+                android:id="@+id/btnSettingPrivacy"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="🔒 Privacy &amp; Audio Retention Policy"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: Help & Safety -->
+            <TextView
+                android:id="@+id/btnSettingHelp"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="❓ Help &amp; Safety Guide"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/divider_border" />
+
+            <!-- Item: About LifeGuard AI -->
+            <TextView
+                android:id="@+id/btnSettingAbout"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="ℹ️ About LifeGuard AI"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:background="?attr/selectableItemBackground" />
+        </LinearLayout>
+
+        <!-- Logout Button -->
+        <Button
+            android:id="@+id/btnLogout"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="LOG OUT"
+            android:backgroundTint="@color/sos_red" />
+
+    </LinearLayout>
+</ScrollView>

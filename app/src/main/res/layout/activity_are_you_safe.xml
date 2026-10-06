@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/surface_white"
+    android:gravity="center"
+    android:padding="28dp">
+
+    <!-- Top Alert Badge -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/card_rounded"
+        android:backgroundTint="@color/sos_red_light"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="6dp"
+        android:text="POSSIBLE EMERGENCY DETECTED"
+        android:textColor="@color/sos_red"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Are you safe?"
+        android:textColor="@color/text_primary"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvDetectionSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="High sound (93 dB) with possible vocal distress detected."
+        android:textAlignment="center"
+        android:textColor="@color/text_secondary"
+        android:textSize="15sp" />
+
+    <!-- 10-Second Countdown Visualizer -->
+    <FrameLayout
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_marginTop="36dp">
+
+        <ProgressBar
+            android:id="@+id/countdownProgress"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:indeterminate="false"
+            android:max="10"
+            android:progress="10"
+            android:progressDrawable="@drawable/decibel_circle" />
+
+        <TextView
+            android:id="@+id/tvCountdownNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="10"
+            android:textColor="@color/sos_red"
+            android:textSize="54sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Auto-alert will trigger if no response"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp" />
+
+    <!-- Action Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btnYesSafe"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="YES, I'M SAFE"
+            android:backgroundTint="@color/active_green" />
+
+        <Button
+            android:id="@+id/btnNoHelp"
+            style="@style/LifeGuardButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="NO, HELP"
+            android:backgroundTint="@color/sos_red" />
+    </LinearLayout>
+
+</LinearLayout>

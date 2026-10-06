@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LifeGuard AI</string>
+    <string name="tagline">Your Safety, Our Priority</string>
+    <string name="app_description">AI-powered personal safety companion for ambient distress detection and emergency response.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_monitoring">Monitoring</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Auth -->
+    <string name="login_title">Welcome Back</string>
+    <string name="login_subtitle">Sign in to your LifeGuard AI safety account</string>
+    <string name="mobile_number">Mobile Number</string>
+    <string name="mobile_hint">+91 98765 43210</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="full_name">Full Name</string>
+    <string name="btn_login">SIGN IN</string>
+    <string name="btn_register">CREATE ACCOUNT</string>
+    <string name="btn_forgot_password">Forgot Password?</string>
+    <string name="already_have_account">Already have an account? Sign In</string>
+    <string name="dont_have_account">Don\'t have an account? Register</string>
+
+    <!-- OTP -->
+    <string name="otp_title">OTP Verification</string>
+    <string name="otp_subtitle">Enter the 6-digit verification code sent to your phone</string>
+    <string name="btn_verify">VERIFY OTP</string>
+    <string name="btn_resend">Resend Code</string>
+
+    <!-- Permissions -->
+    <string name="permission_title">Permissions Setup</string>
+    <string name="permission_subtitle">LifeGuard AI requires the following permissions to ensure your protection:</string>
+    <string name="permission_mic_title">Microphone Access</string>
+    <string name="permission_mic_desc">LifeGuard AI needs microphone access to monitor surrounding sound and detect possible distress situations.</string>
+    <string name="permission_loc_title">Location Access</string>
+    <string name="permission_loc_desc">Location is required to share your current location during emergencies.</string>
+    <string name="permission_notif_title">Notifications</string>
+    <string name="permission_notif_desc">Notifications are required for safety alerts and emergency contact messages.</string>
+    <string name="btn_allow_permissions">GRANT PERMISSIONS</string>
+    <string name="permission_required_dialog">Permission Required. Please allow from Settings to keep safety monitoring active.</string>
+
+    <!-- Sound Monitoring -->
+    <string name="sound_monitoring">SOUND MONITORING</string>
+    <string name="monitoring_off">Monitoring OFF</string>
+    <string name="monitoring_active">MONITORING ACTIVE</string>
+    <string name="start_monitoring">START MONITORING</string>
+    <string name="stop_monitoring">STOP MONITORING</string>
+    <string name="current_sound">Current Sound</string>
+    <string name="sound_status_normal">Sound Level Normal</string>
+    <string name="sound_status_high">High sound detected</string>
+    <string name="sound_status_analyzing">Analyzing audio with On-Device AI...</string>
+
+    <!-- Safety Confirmation ("Are you safe?") -->
+    <string name="possible_emergency_detected">POSSIBLE EMERGENCY DETECTED</string>
+    <string name="are_you_safe">Are you safe?</string>
+    <string name="btn_yes_safe">YES, I\'M SAFE</string>
+    <string name="btn_no_help">NO, HELP</string>
+    <string name="safety_countdown_prefix">Auto-alert in: %d seconds</string>
+
+    <!-- SOS & Emergency -->
+    <string name="emergency_sos">EMERGENCY SOS</string>
+    <string name="hold_sos_prompt">Press and hold for 3 seconds</string>
+    <string name="emergency_activated">EMERGENCY PROCEDURE ACTIVATED</string>
+    <string name="call_112">CALL 112 (EMERGENCY)</string>
+    <string name="call_108">CALL 108 (AMBULANCE)</string>
+    <string name="emergency_alarm">EMERGENCY ALARM</string>
+    <string name="nearby_hospitals">NEARBY HOSPITALS</string>
+    <string name="share_location">SHARE MY LOCATION</string>
+    <string name="emergency_contacts">EMERGENCY CONTACTS</string>
+    <string name="stop_alarm">STOP ALARM</string>
+
+    <!-- Location -->
+    <string name="location_unavailable">LOCATION UNAVAILABLE</string>
+    <string name="gps_active">GPS Active</string>
+    <string name="open_in_map">OPEN IN MAP</string>
+    <string name="send_to_contacts">SEND TO CONTACTS</string>
+
+    <!-- Contacts -->
+    <string name="connected_contacts">Connected Contacts</string>
+    <string name="pending_requests">Pending Requests</string>
+    <string name="add_contact">Add Contact</string>
+    <string name="btn_send_request">SEND INVITATION</string>
+    <string name="btn_accept">ACCEPT</string>
+    <string name="btn_reject">REJECT</string>
+    <string name="btn_remove">REMOVE</string>
+
+    <!-- Errors & Fallbacks -->
+    <string name="ai_unavailable">AI analysis unavailable.</string>
+    <string name="no_internet">No internet connection. Manual SOS remains available.</string>
+    <string name="power_button_unsupported">Power Button SOS is not supported on this device.</string>
+</resources>

@@ -1,0 +1,89 @@
+{
+  "project": "LifeGuard AI",
+  "dataset_name": "LifeGuard AI Authentic Audio Dataset",
+  "version": "1.0.0",
+  "status": "AUTHENTIC_DATASET_VERIFIED",
+  "total_samples": 225,
+  "classes": [
+    "environmental",
+    "human_normal",
+    "human_distress"
+  ],
+  "sample_rate": 16000,
+  "duration_seconds": 3.0,
+  "class_distribution": {
+    "environmental": {
+      "train": 52,
+      "val": 11,
+      "test": 12
+    },
+    "human_normal": {
+      "train": 52,
+      "val": 11,
+      "test": 12
+    },
+    "human_distress": {
+      "train": 52,
+      "val": 11,
+      "test": 12
+    }
+  },
+  "sources": [
+    {
+      "name": "Deeply Nonverbal Vocalization Dataset",
+      "organization": "Deeply Inc. / OpenSLR",
+      "license": "Open Research License (CC-BY / Academic)",
+      "classes": [
+        "screaming",
+        "crying",
+        "laughing",
+        "coughing",
+        "sneezing",
+        "yawning",
+        "sighing",
+        "throat-clearing"
+      ]
+    },
+    {
+      "name": "Mobile Noise Classifier Dataset",
+      "source": "valGavin/Mobile_Noise_Classifier",
+      "license": "Open Source / MIT",
+      "classes": [
+        "traffic",
+        "siren",
+        "car horn",
+        "crowd",
+        "dog"
+      ]
+    },
+    {
+      "name": "Enduro Vehicle Acoustic Sound Effects",
+      "source": "jeffotoni/enduro",
+      "license": "Open Source / MIT",
+      "classes": [
+        "engine",
+        "vehicle crash",
+        "tire skid"
+      ]
+    },
+    {
+      "name": "Dexcom Acoustic Alarm Sounds",
+      "source": "vguttmann/dexcom_sounds",
+      "license": "Open Source / MIT",
+      "classes": [
+        "alarm sirens",
+        "alert signals"
+      ]
+    },
+    {
+      "name": "PDX CS Audio Dataset",
+      "source": "pdx-cs-sound/wavs",
+      "license": "Academic / Educational",
+      "classes": [
+        "car-horn",
+        "ambient noise",
+        "speech voice"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+=================================================================
+ LIFEGUARD AI — AUDIO CLASSIFIER EVALUATION REPORT
+=================================================================
+Total Evaluated Samples: 36
+Overall Accuracy:        100.00%
+Macro Precision:         100.00%
+Macro Recall:            100.00%
+Macro F1-Score:          100.00%
+-----------------------------------------------------------------
+Class                | Precision  | Recall     | F1-Score   | Support 
+-----------------------------------------------------------------
+environmental        |   100.00% |   100.00% |   100.00% |       12
+human_normal         |   100.00% |   100.00% |   100.00% |       12
+human_distress       |   100.00% |   100.00% |   100.00% |       12
+-----------------------------------------------------------------
+CONFUSION MATRIX (Rows: Actual, Columns: Predicted):
+                        environm   human_no   human_di
+environmental        |         12          0          0
+human_normal         |          0         12          0
+human_distress       |          0          0         12
+=================================================================

@@ -1,0 +1,31 @@
+{
+  "project_name": "LifeGuard AI",
+  "model_name": "lifeguard_audio_classifier",
+  "version": "1.0.0",
+  "sample_rate": 16000,
+  "duration_seconds": 3.0,
+  "num_samples": 48000,
+  "n_fft": 1024,
+  "hop_length": 512,
+  "n_mels": 64,
+  "f_min": 50.0,
+  "f_max": 8000.0,
+  "num_frames": 92,
+  "input_shape": [92, 64, 1],
+  "num_classes": 3,
+  "classes": [
+    "environmental",
+    "human_normal",
+    "human_distress"
+  ],
+  "class_mapping": {
+    "0": "environmental",
+    "1": "human_normal",
+    "2": "human_distress"
+  },
+  "emergency_threshold": 0.75,
+  "sound_monitoring": {
+    "trigger_decibel_threshold": 90.0,
+    "countdown_seconds": 10
+  }
+}
